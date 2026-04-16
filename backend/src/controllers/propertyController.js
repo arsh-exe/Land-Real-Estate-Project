@@ -1,0 +1,197 @@
+const Document = require("../models/Document");
+const Property = require("../models/Property");
+const generateId = require("../utils/generateId");
+
+const createProperty = async (req, res, next) => {
+  try {
+    const { title, location, price, area, type } = req.body;
+
+    const property = await Property.create({
+      propertyId: generateId("PROP"),
+      title,
+      location,
+      price,
+      area,
+      type,
+      owner: req.user._id,
+      ownershipHistory: [
+        {
+          owner: req.user._id,
+          note: "Initial registration",
+        },
+      ],
+    });
+
+    if (req.files && req.files.length > 0) {
+      const docs = await Promise.all(
+        req.files.map((file) =>
+          Document.create({
+            documentId: generateId("DOC"),
+            originalName: file.originalname,
+            filePath: `/uploads/${file.filename}`,
+            mimeType: file.mimetype,
+            size: file.size,
+            uploadedBy: req.user._id,
+            property: property._id,
+            kind: "PROPERTY_DOC",
+          })
+        )
+      );
+
+      property.documents = docs.map((doc) => doc._id);
+      await property.save();
+    }
+
+    return res.status(201).json({ message: "Property created", property });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const listProperties = async (req, res, next) => {
+  try {
+    const {
+      location,
+      type,
+      minPrice,
+      maxPrice,
+      sortBy = "createdAt",
+      order = "desc",
+    } = req.query;
+
+    const filter = {};
+    if (location) filter.location = { $regex: location, $options: "i" };
+    if (type) filter.type = type;
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+
+    const sort = { [sortBy]: order === "asc" ? 1 : -1 };
+
+    const properties = await Property.find(filter)
+      .populate("owner", "fullName email role")
+      .populate("documents")
+      .sort(sort);
+
+    return res.status(200).json({ count: properties.length, properties });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getPropertyById = async (req, res, next) => {
+  try {
+    const property = await Property.findById(req.params.id)
+      .populate("owner", "fullName email role")
+      .populate("ownershipHistory.owner", "fullName email")
+      .populate("documents");
+
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    return res.status(200).json({ property });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateProperty = async (req, res, next) => {
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    const canEdit =
+      property.owner.toString() === req.user._id.toString() ||
+      ["Admin", "Government Officer"].includes(req.user.role);
+
+    if (!canEdit) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const updates = (({ title, location, price, area, type }) => ({
+      title,
+      location,
+      price,
+      area,
+      type,
+    }))(req.body);
+
+    Object.keys(updates).forEach((key) => {
+      if (updates[key] !== undefined && updates[key] !== null && updates[key] !== "") {
+        property[key] = updates[key];
+      }
+    });
+
+    if (req.files && req.files.length > 0) {
+      const docs = await Promise.all(
+        req.files.map((file) =>
+          Document.create({
+            documentId: generateId("DOC"),
+            originalName: file.originalname,
+            filePath: `/uploads/${file.filename}`,
+            mimeType: file.mimetype,
+            size: file.size,
+            uploadedBy: req.user._id,
+            property: property._id,
+            kind: "PROPERTY_DOC",
+          })
+        )
+      );
+
+      property.documents.push(...docs.map((doc) => doc._id));
+    }
+
+    await property.save();
+
+    return res.status(200).json({ message: "Property updated", property });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteProperty = async (req, res, next) => {
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    const canDelete =
+      property.owner.toString() === req.user._id.toString() || req.user.role === "Admin";
+
+    if (!canDelete) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    await property.deleteOne();
+    return res.status(200).json({ message: "Property deleted" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const listMyProperties = async (req, res, next) => {
+  try {
+    const properties = await Property.find({ owner: req.user._id })
+      .populate("documents")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({ properties });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createProperty,
+  listProperties,
+  getPropertyById,
+  updateProperty,
+  deleteProperty,
+  listMyProperties,
+};

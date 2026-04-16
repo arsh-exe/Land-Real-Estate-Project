@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registration Requests • Land Registry System</title>
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+  </head>
+  <body data-auth="private">
+    <header id="navbar-root"></header>
+
+    <main class="container">
+      <section class="page-header">
+        <h1>Registration Workflow</h1>
+        <p>Buyer requests, seller decisions, officer verification, and transaction logs.</p>
+      </section>
+
+      <section class="card">
+        <h3>Requests</h3>
+        <div id="requests-root" class="list"></div>
+      </section>
+
+      <section class="card mt-1">
+        <h3>Transaction History</h3>
+        <div id="transactions-root" class="list"></div>
+      </section>
+    </main>
+
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/navbar.js"></script>
+    <script src="/assets/js/requests.js"></script>
+  </body>
+</html>

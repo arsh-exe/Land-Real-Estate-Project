@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register • Land Registry System</title>
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+  </head>
+  <body data-auth="guest">
+    <header id="navbar-root"></header>
+
+    <main class="container">
+      <section class="page-header">
+        <h1>Create Account</h1>
+        <p>Register as Buyer, Seller, Government Officer, or Admin.</p>
+      </section>
+
+      <section class="card centered-card-md">
+        <form id="auth-form" data-mode="register">
+          <div class="form-row">
+            <div>
+              <label for="fullName">Full Name</label>
+              <input class="input" id="fullName" name="fullName" type="text" required />
+            </div>
+            <div>
+              <label for="email">Email</label>
+              <input class="input" id="email" name="email" type="email" required />
+            </div>
+          </div>
+
+          <div class="form-row mt-08">
+            <div>
+              <label for="password">Password</label>
+              <input class="input" id="password" name="password" type="password" minlength="8" required />
+            </div>
+            <div>
+              <label for="role">Role</label>
+              <select id="role" name="role" required>
+                <option value="Buyer">Buyer</option>
+                <option value="Seller">Seller</option>
+                <option value="Government Officer">Government Officer</option>
+                <option value="Admin">Admin</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn btn-primary mt-1" type="submit">Register</button>
+          <p id="auth-message" class="mt-06"></p>
+        </form>
+      </section>
+    </main>
+
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/navbar.js"></script>
+    <script src="/assets/js/auth.js"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "Land and real estate registration frontend",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -l 5500"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

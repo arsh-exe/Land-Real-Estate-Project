@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login • Land Registry System</title>
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+  </head>
+  <body data-auth="guest">
+    <header id="navbar-root"></header>
+
+    <main class="container">
+      <section class="page-header">
+        <h1>Login</h1>
+        <p>Sign in to continue to your role-based dashboard.</p>
+      </section>
+
+      <section class="card centered-card-sm">
+        <form id="auth-form" data-mode="login">
+          <div>
+            <label for="email">Email</label>
+            <input class="input" id="email" name="email" type="email" required />
+          </div>
+          <div class="mt-08">
+            <label for="password">Password</label>
+            <input class="input" id="password" name="password" type="password" required />
+          </div>
+          <button class="btn btn-primary mt-1" type="submit">Login</button>
+          <p id="auth-message" class="mt-06"></p>
+        </form>
+      </section>
+    </main>
+
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/navbar.js"></script>
+    <script src="/assets/js/auth.js"></script>
+  </body>
+</html>

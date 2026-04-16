@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Properties • Land Registry System</title>
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+  </head>
+  <body data-auth="private">
+    <header id="navbar-root"></header>
+
+    <main class="container">
+      <section class="page-header">
+        <h1>Property Registry</h1>
+        <p>Search listings, apply filters, and manage property submissions.</p>
+      </section>
+
+      <section class="card">
+        <h3>Search & Filters</h3>
+        <form id="property-filter-form" class="form-row">
+          <input class="input" name="location" placeholder="Location" />
+          <select name="type" title="Filter by property type" aria-label="Filter by property type">
+            <option value="">All Types</option>
+            <option value="Residential">Residential</option>
+            <option value="Commercial">Commercial</option>
+            <option value="Agricultural">Agricultural</option>
+            <option value="Industrial">Industrial</option>
+            <option value="Other">Other</option>
+          </select>
+          <input class="input" name="minPrice" type="number" placeholder="Min Price" />
+          <input class="input" name="maxPrice" type="number" placeholder="Max Price" />
+          <button class="btn btn-primary" type="submit">Apply</button>
+        </form>
+      </section>
+
+      <section id="add-property-block" class="card hidden mt-1">
+        <h3>Add Property</h3>
+        <form id="add-property-form" enctype="multipart/form-data">
+          <div class="form-row">
+            <input class="input" name="title" placeholder="Title" required />
+            <input class="input" name="location" placeholder="Location" required />
+            <select name="type" required title="Property type" aria-label="Property type">
+              <option value="Residential">Residential</option>
+              <option value="Commercial">Commercial</option>
+              <option value="Agricultural">Agricultural</option>
+              <option value="Industrial">Industrial</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-row mt-08">
+            <input class="input" name="price" type="number" placeholder="Price" required />
+            <input class="input" name="area" type="number" placeholder="Area (sq.ft)" required />
+            <div>
+              <label for="documents">Property documents</label>
+              <input class="input" id="documents" name="documents" type="file" multiple />
+            </div>
+          </div>
+          <button class="btn btn-primary mt-1" type="submit">Save Property</button>
+          <p id="property-form-message" class="mt-06"></p>
+        </form>
+      </section>
+
+      <section class="card mt-1">
+        <h3>Property Listings</h3>
+        <div id="property-list" class="list"></div>
+      </section>
+    </main>
+
+    <script src="/assets/js/api.js"></script>
+    <script src="/assets/js/navbar.js"></script>
+    <script src="/assets/js/properties.js"></script>
+  </body>
+</html>

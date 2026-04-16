@@ -7,6 +7,7 @@ const menuByRole = {
   buyer: [
     { label: "Dashboard", href: "/pages/dashboard.html" },
     { label: "Search Properties", href: "/pages/properties.html" },
+    { label: "My Properties", href: "/pages/properties?view=mine" },
     { label: "My Requests", href: "/pages/requests.html" },
     { label: "Logout", href: "#logout", action: "logout" },
   ],

@@ -26,7 +26,7 @@ const propertyValidation = [
 ];
 
 router.get("/", listProperties);
-router.get("/my", protect, authorize("Seller", "Admin"), listMyProperties);
+router.get("/my", protect, authorize("Seller", "Admin", "Buyer"), listMyProperties);
 router.get("/:id", getPropertyById);
 
 router.post(

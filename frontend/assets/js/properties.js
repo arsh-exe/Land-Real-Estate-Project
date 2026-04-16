@@ -12,12 +12,13 @@ const parsePropertiesPageMode = () => {
 
   const isSeller = role === "seller";
   const isAdmin = role === "admin";
+  const isBuyer = role === "buyer";
 
   if ((isSeller || isAdmin) && (view === "add" || action === "add")) {
     return "add";
   }
 
-  if (isSeller && (view === "mine" || mine === "1" || mine === "true")) {
+  if ((isSeller || isBuyer) && (view === "mine" || mine === "1" || mine === "true")) {
     return "mine";
   }
 
@@ -119,9 +120,10 @@ const renderProperties = (properties = []) => {
     .map(
       (property) => {
         const ownerId = property?.owner?._id || property?.owner?.id || property?.owner;
+        const isOwner = Boolean(currentUserId) && String(ownerId) === String(currentUserId);
         const canManage =
           currentRole === "admin" ||
-          (currentRole === "seller" && Boolean(currentUserId) && String(ownerId) === String(currentUserId));
+          (currentRole === "seller" && isOwner);
 
         return `
       <article class="property-item">
@@ -133,8 +135,13 @@ const renderProperties = (properties = []) => {
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
           <a class="btn btn-outline" href="/pages/property-details?id=${property._id}">View Details</a>
           ${
-            currentRole === "buyer"
+            currentRole === "buyer" && !isOwner
               ? `<button class="btn btn-primary" data-request="${property._id}">Request Registration</button>`
+              : ""
+          }
+          ${
+            currentRole === "buyer" && isOwner
+              ? `<button class="btn btn-outline" disabled style="border-color: var(--success); color: var(--success); cursor: default;">✓ Owned by You</button>`
               : ""
           }
           ${
@@ -222,7 +229,7 @@ const loadProperties = async (query = "") => {
     const user = getUser();
     const role = roleKey(user?.role);
     const mode = parsePropertiesPageMode();
-    const shouldLoadMine = role === "seller" && mode === "mine";
+    const shouldLoadMine = ["seller", "buyer"].includes(role) && mode === "mine";
     const endpoint = shouldLoadMine
       ? "/properties/my"
       : `/properties${query ? `?${query}` : ""}`;

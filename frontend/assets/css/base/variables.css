@@ -1,0 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap");
+
+:root {
+  --gov-blue: #0b2e59;
+  --gov-blue-deep: #082244;
+  --gov-gold: #c59a3d;
+  --gov-bg: #eef2f7;
+  --surface: #ffffff;
+  --text: #1d2430;
+  --muted: #617189;
+  --danger: #b42318;
+  --success: #067647;
+  --warning: #b54708;
+  --shadow: 0 10px 30px rgba(11, 46, 89, 0.08);
+  --shadow-lg: 0 20px 50px rgba(11, 46, 89, 0.12);
+  --shadow-hover: 0 15px 40px rgba(11, 46, 89, 0.15);
+}

@@ -1,0 +1,45 @@
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border-left: 5px solid var(--success);
+  animation: slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 1000;
+  max-width: 420px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.toast.toast-closing {
+  animation: fadeOutRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.toast.error {
+  border-left-color: var(--danger);
+}
+
+.toast.warning {
+  border-left-color: var(--warning);
+}
+
+.toast.info {
+  border-left-color: var(--gov-blue);
+}
+
+.toast-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.toast-message {
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+  margin-top: 0.1rem;
+}

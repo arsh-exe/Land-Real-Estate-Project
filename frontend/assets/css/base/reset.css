@@ -12,3 +12,22 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gov-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c8d4e4;
+  border-radius: 10px;
+  border: 2px solid var(--gov-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}

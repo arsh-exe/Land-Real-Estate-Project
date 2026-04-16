@@ -1,0 +1,81 @@
+.input,
+select,
+textarea {
+  width: 100%;
+  border: 2px solid #c8d4e4;
+  border-radius: 10px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--gov-blue);
+  box-shadow: 0 0 0 4px rgba(11, 46, 89, 0.1);
+  transform: scale(1.01);
+}
+
+.input-group {
+  position: relative;
+}
+
+.input-group .input {
+  padding-right: 5.5rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  transform: translateY(-50%);
+  border: 1px solid #c8d4e4;
+  background: #fff;
+  color: var(--gov-blue);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  background: #f3f7fc;
+}
+
+form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+}
+
+form {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.form-row > div {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.input,
+select,
+textarea {
+  background: #f8fbff;
+}
+
+.input:focus,
+select:focus,
+textarea:focus {
+  background: #fff;
+  border-color: var(--gov-gold);
+  box-shadow: 0 0 0 4px rgba(197, 154, 61, 0.15);
+}

@@ -38,7 +38,7 @@ const renderPropertyDetails = (property) => {
             <div class="property-item">
               <strong>${doc.originalName}</strong>
               <p>${doc.mimeType}</p>
-              <a class="btn btn-outline" href="http://localhost:5000${doc.filePath}" target="_blank">Open</a>
+              <a class="btn btn-outline" href="${SERVER_URL}${doc.filePath}" target="_blank">Open</a>
             </div>
           `
           )

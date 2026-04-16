@@ -1,0 +1,43 @@
+.hidden {
+  display: none !important;
+}
+
+.centered-card-sm {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.centered-card-md {
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.mt-06 {
+  margin-top: 0.6rem;
+}
+
+.mt-08 {
+  margin-top: 0.8rem;
+}
+
+.mt-1 {
+  margin-top: 1rem;
+}
+
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.spinner {
+  border: 3px solid #f0f0f0;
+  border-top: 3px solid var(--gov-blue);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 0.8s linear infinite;
+}
+
+main {
+  animation: fadeInUp 0.6s ease-out;
+}

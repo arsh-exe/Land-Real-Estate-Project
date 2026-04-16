@@ -1,4 +1,5 @@
-const API_BASE_URL = "http://localhost:5000/api";
+const SERVER_URL = "http://localhost:5000";
+const API_BASE_URL = `${SERVER_URL}/api`;
 
 const getToken = () => localStorage.getItem("lrs_token");
 const getUser = () => {

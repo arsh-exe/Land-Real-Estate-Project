@@ -19,7 +19,7 @@ const renderDashboard = (role, data) => {
   } else if (role === "Seller") {
     metricCards.push(
       { label: "My Properties", value: data.myPropertiesCount },
-      { label: "Incoming Requests", value: data.incomingRequestsCount },
+      { label: "Total Requests", value: data.incomingRequestsCount },
       { label: "Pending Decisions", value: data.pendingApprovals }
     );
   } else {

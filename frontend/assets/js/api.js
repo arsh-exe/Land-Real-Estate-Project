@@ -23,16 +23,29 @@ const clearAuth = () => {
 const showToast = (message, type = "success", duration = 3000) => {
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
-  toast.textContent = message;
+  
+  // Add icon based on type
+  const icons = {
+    success: "✅",
+    error: "❌",
+    warning: "⚠️",
+    info: "ℹ️"
+  };
+  
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || icons.info}</span>
+    <span class="toast-message">${message}</span>
+  `;
+  
   document.body.appendChild(toast);
   
   setTimeout(() => {
-    toast.style.animation = "fadeOut 0.4s ease-out";
+    toast.classList.add("toast-closing");
     setTimeout(() => toast.remove(), 400);
   }, duration);
 };
 
-const roleKey = (role) => (role || "").toLowerCase();
+const roleKey = (role) => String(role || "").trim().toLowerCase();
 
 const buildHeaders = (isFormData = false) => {
   const headers = {};

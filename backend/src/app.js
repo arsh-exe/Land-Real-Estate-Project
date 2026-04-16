@@ -19,9 +19,26 @@ const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const app = express();
 
 app.use(helmet());
+
+const allowedOrigins = new Set([
+  process.env.CLIENT_URL,
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+].filter(Boolean));
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5500",
+    origin(origin, callback) {
+      // Allow non-browser clients and same-origin requests.
+      if (!origin) return callback(null, true);
+
+      const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/i.test(origin);
+      if (allowedOrigins.has(origin) || isLocalhost) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );

@@ -44,9 +44,10 @@ const bindRequestActions = () => {
           method: "PATCH",
           body: JSON.stringify({ status, note }),
         });
+        showToast(`Request ${status.toLowerCase()} successfully`, "success");
         await loadRequests();
       } catch (error) {
-        alert(error.message);
+        showToast(error.message, "error");
       }
     });
   });
@@ -57,9 +58,9 @@ const bindRequestActions = () => {
         const data = await apiRequest(`/certificates/${button.dataset.certificate}`, {
           method: "POST",
         });
-        alert(`Certificate created: ${data.certificate.filePath}`);
+        showToast(`Certificate created: ${data.certificate.filePath}`, "success");
       } catch (error) {
-        alert(error.message);
+        showToast(error.message, "error");
       }
     });
   });
@@ -67,6 +68,20 @@ const bindRequestActions = () => {
 
 const loadRequests = async () => {
   if (!requestsRoot) return;
+
+  // Show skeleton loading state
+  requestsRoot.innerHTML = Array(3).fill(`
+    <article class="request-item skeleton" style="border: none; box-shadow: none;">
+      <div class="skeleton-title"></div>
+      <div class="skeleton-text"></div>
+      <div class="skeleton-text"></div>
+      <div class="skeleton-text short"></div>
+      <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+        <div class="skeleton-text" style="width: 100px; height: 36px; border-radius: 8px;"></div>
+        <div class="skeleton-text" style="width: 100px; height: 36px; border-radius: 8px;"></div>
+      </div>
+    </article>
+  `).join("");
 
   try {
     const role = roleKey(getUser()?.role);
@@ -96,12 +111,21 @@ const loadRequests = async () => {
 
     bindRequestActions();
   } catch (error) {
-    requestsRoot.innerHTML = `<p style="color:#b42318;">${error.message}</p>`;
+    requestsRoot.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
+    showToast(error.message, "error");
   }
 };
 
 const loadTransactions = async () => {
   if (!transactionsRoot) return;
+
+  // Show skeleton loading state
+  transactionsRoot.innerHTML = Array(3).fill(`
+    <article class="txn-item skeleton" style="border: none; box-shadow: none; height: 100px;">
+      <div class="skeleton-text short"></div>
+      <div class="skeleton-title" style="margin-top: 0.5rem;"></div>
+    </article>
+  `).join("");
 
   try {
     const { transactions } = await apiRequest("/transactions");
@@ -121,7 +145,8 @@ const loadTransactions = async () => {
       transactionsRoot.innerHTML = "<p>No transactions available.</p>";
     }
   } catch (error) {
-    transactionsRoot.innerHTML = `<p style="color:#b42318;">${error.message}</p>`;
+    transactionsRoot.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
+    showToast(error.message, "error");
   }
 };
 

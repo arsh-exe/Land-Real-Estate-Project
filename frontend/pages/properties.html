@@ -4,19 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Properties • Land Registry System</title>
-    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/styles.css?v=20260416b" />
   </head>
   <body data-auth="private">
     <header id="navbar-root"></header>
 
     <main class="container">
       <section class="page-header">
-        <h1>🏘️ Property Registry</h1>
-        <p>Search listings, apply filters, manage submissions, and register your properties securely.</p>
+        <h1 id="properties-title">Property Registry</h1>
+        <p id="properties-subtitle">Search listings, apply filters, manage submissions, and register your properties securely.</p>
       </section>
 
-      <section class="card">
-        <h3>🔍 Search & Filter Properties</h3>
+      <section id="filter-block" class="card">
+        <h3>Search & Filter Properties</h3>
         <form id="property-filter-form" class="form-row">
           <input class="input" name="location" placeholder="Location" />
           <select name="type" title="Filter by property type" aria-label="Filter by property type">
@@ -60,14 +60,16 @@
         </form>
       </section>
 
-      <section class="card mt-1">
+      <section id="listing-block" class="card mt-1">
         <h3>Property Listings</h3>
         <div id="property-list" class="list"></div>
       </section>
     </main>
 
+    <footer class="footer">Property records and submission workflows</footer>
+
     <script src="/assets/js/api.js"></script>
-    <script src="/assets/js/navbar.js"></script>
-    <script src="/assets/js/properties.js"></script>
+    <script src="/assets/js/navbar.js?v=20260416d"></script>
+    <script src="/assets/js/properties.js?v=20260416d"></script>
   </body>
 </html>

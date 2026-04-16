@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login • Land Registry System</title>
-    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/styles.css?v=20260416b" />
   </head>
   <body data-auth="guest">
     <header id="navbar-root"></header>
 
     <main class="container">
       <section class="page-header">
-        <h1>🔐 Secure Login</h1>
+        <h1>Secure Login</h1>
         <p>Sign in to your role-based dashboard and manage your land registrations.</p>
       </section>
 
@@ -23,18 +23,21 @@
         <form id="auth-form" data-mode="login">
           <div style="margin-bottom: 1rem;">
             <label for="email" style="display: flex; align-items: center; gap: 0.5rem;">
-              <span>📧</span> Email Address
+              Email Address
             </label>
             <input class="input" id="email" name="email" type="email" placeholder="your.email@example.com" required />
           </div>
           <div style="margin-bottom: 1.5rem;">
             <label for="password" style="display: flex; align-items: center; gap: 0.5rem;">
-              <span>🔑</span> Password
+              Password
             </label>
-            <input class="input" id="password" name="password" type="password" placeholder="••••••••" required />
+            <div class="input-group">
+              <input class="input" id="password" name="password" type="password" placeholder="Enter your password" required />
+              <button class="password-toggle" type="button" data-password-toggle="password" aria-label="Show password">Show</button>
+            </div>
           </div>
           <button class="btn btn-primary" type="submit" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
-            🔓 Sign In
+            Sign In
           </button>
           <p id="auth-message" class="mt-06" style="text-align: center; color: var(--danger);"></p>
         </form>
@@ -46,10 +49,10 @@
       </section>
     </main>
 
-    <footer class="footer">🔒 Your data is secured with industry-standard encryption</footer>
+    <footer class="footer">Your data is secured with industry-standard encryption</footer>
 
     <script src="/assets/js/api.js"></script>
-    <script src="/assets/js/navbar.js"></script>
+    <script src="/assets/js/navbar.js?v=20260416b"></script>
     <script src="/assets/js/auth.js"></script>
   </body>
 </html>

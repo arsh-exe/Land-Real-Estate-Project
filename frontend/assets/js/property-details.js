@@ -56,11 +56,30 @@ const loadPropertyDetails = async () => {
     return;
   }
 
+  // Show skeleton loading state
+  detailsRoot.innerHTML = `
+    <article class="card skeleton" style="border: none; box-shadow: none; height: 200px; margin-bottom: 1rem;">
+      <div class="skeleton-title" style="margin-bottom: 1rem;"></div>
+      <div class="skeleton-text"></div>
+      <div class="skeleton-text"></div>
+      <div class="skeleton-text short"></div>
+    </article>
+    <article class="card skeleton" style="border: none; box-shadow: none; height: 150px; margin-bottom: 1rem;">
+      <div class="skeleton-title" style="width: 40%; margin-bottom: 1rem;"></div>
+      <div class="skeleton-text short"></div>
+    </article>
+    <article class="card skeleton" style="border: none; box-shadow: none; height: 150px;">
+      <div class="skeleton-title" style="width: 40%; margin-bottom: 1rem;"></div>
+      <div class="skeleton-text short"></div>
+    </article>
+  `;
+
   try {
     const data = await apiRequest(`/properties/${id}`);
     renderPropertyDetails(data.property);
   } catch (error) {
-    detailsRoot.innerHTML = `<p style="color:#b42318;">${error.message}</p>`;
+    detailsRoot.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
+    showToast(error.message, "error");
   }
 };
 

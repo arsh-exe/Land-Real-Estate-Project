@@ -27,6 +27,8 @@ body {
   background: radial-gradient(circle at 10% 0%, #f8fbff 0%, var(--gov-bg) 45%, #e6edf6 100%);
   min-height: 100vh;
   transition: background-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 h1,
@@ -50,6 +52,10 @@ a {
   margin: 0 auto;
 }
 
+main.container {
+  flex: 1;
+}
+
 .navbar {
   position: sticky;
   top: 0;
@@ -57,6 +63,7 @@ a {
   background: linear-gradient(90deg, var(--gov-blue-deep), var(--gov-blue));
   color: #fff;
   box-shadow: var(--shadow-lg);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
@@ -111,11 +118,18 @@ a {
   position: relative;
 }
 
-.nav-link:hover,
-.nav-link.active {
+.nav-link:hover {
   background: rgba(197, 154, 61, 0.3);
   color: #fff;
   transform: translateY(-2px);
+}
+
+.nav-link.active {
+  background: var(--gov-gold);
+  color: var(--gov-blue-deep);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
 }
 
 .page-header {
@@ -239,6 +253,32 @@ textarea:focus {
   transform: scale(1.01);
 }
 
+.input-group {
+  position: relative;
+}
+
+.input-group .input {
+  padding-right: 5.5rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  transform: translateY(-50%);
+  border: 1px solid #c8d4e4;
+  background: #fff;
+  color: var(--gov-blue);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  background: #f3f7fc;
+}
+
 form label {
   display: block;
   font-weight: 600;
@@ -299,7 +339,7 @@ form label {
 }
 
 .footer {
-  margin-top: 2rem;
+  margin-top: auto;
   border-top: 1px solid #dbe5f0;
   color: var(--muted);
   padding: 1rem 0 2rem;
@@ -446,29 +486,53 @@ form label {
 /* Toast notifications */
 .toast {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 24px;
+  right: 24px;
   background: var(--surface);
-  padding: 1rem 1.5rem;
-  border-radius: 10px;
-  box-shadow: var(--shadow-lg);
-  border-left: 4px solid var(--success);
-  animation: slideInRight 0.4s ease-out;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  border-left: 5px solid var(--success);
+  animation: slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   z-index: 1000;
-  max-width: 400px;
+  max-width: 420px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
 }
 
-.toast.error {
-  border-left-color: var(--danger);
+.toast.toast-closing {
+  animation: fadeOutRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-.toast.warning {
-  border-left-color: var(--warning);
+.toast.error { border-left-color: var(--danger); }
+.toast.warning { border-left-color: var(--warning); }
+.toast.info { border-left-color: var(--gov-blue); }
+
+.toast-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.toast-message {
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+  margin-top: 0.1rem;
+}
+
+@keyframes fadeOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
 }
 
 /* Badge improvements */
 .badge {
   animation: fadeInUp 0.5s ease-out;
+  padding: 0.35rem 0.8rem;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 /* Form improvements */
@@ -480,7 +544,51 @@ form {
   animation: fadeInUp 0.6s ease-out;
 }
 
+/* Enhanced Inputs */
+.input, select, textarea {
+  background: #f8fbff;
+}
+.input:focus, select:focus, textarea:focus {
+  background: #fff;
+  border-color: var(--gov-gold);
+  box-shadow: 0 0 0 4px rgba(197, 154, 61, 0.15);
+}
+
 /* Page transitions */
 main {
   animation: fadeInUp 0.6s ease-out;
 }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--gov-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: #c8d4e4;
+  border-radius: 10px;
+  border: 2px solid var(--gov-bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(90deg, #eef2f7 25%, #f8fbff 50%, #eef2f7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+.skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+.skeleton-text.short { width: 60%; }
+.skeleton-title { height: 1.5rem; margin-bottom: 1rem; width: 80%; }
+.skeleton-img { height: 150px; width: 100%; margin-bottom: 1rem; }

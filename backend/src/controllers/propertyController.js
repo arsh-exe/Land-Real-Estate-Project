@@ -105,8 +105,9 @@ const updateProperty = async (req, res, next) => {
       return res.status(404).json({ message: "Property not found" });
     }
 
+    const ownerId = property.owner ? property.owner.toString() : null;
     const canEdit =
-      property.owner.toString() === req.user._id.toString() ||
+      ownerId === req.user._id.toString() ||
       ["Admin", "Government Officer"].includes(req.user.role);
 
     if (!canEdit) {
@@ -161,8 +162,9 @@ const deleteProperty = async (req, res, next) => {
       return res.status(404).json({ message: "Property not found" });
     }
 
+    const ownerId = property.owner ? property.owner.toString() : null;
     const canDelete =
-      property.owner.toString() === req.user._id.toString() || req.user.role === "Admin";
+      ownerId === req.user._id.toString() || req.user.role === "Admin";
 
     if (!canDelete) {
       return res.status(403).json({ message: "Forbidden" });

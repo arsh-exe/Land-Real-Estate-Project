@@ -66,11 +66,27 @@ const renderDashboard = (role, data) => {
 
 const loadDashboard = async () => {
   if (!dashboardRoot) return;
+  
+  // Show skeleton loading state
+  dashboardRoot.innerHTML = `
+    <div class="grid grid-3">
+      ${Array(3).fill(`
+        <article class="card skeleton" style="border: none; box-shadow: none; height: 100px;">
+          <div class="skeleton-text short"></div>
+          <div class="skeleton-title" style="margin-top: 1rem;"></div>
+        </article>
+      `).join("")}
+    </div>
+    <section class="card skeleton" style="margin-top: 1rem; height: 300px; border: none; box-shadow: none;">
+    </section>
+  `;
+
   try {
     const { role, data } = await apiRequest("/dashboard");
     renderDashboard(role, data);
   } catch (error) {
-    dashboardRoot.innerHTML = `<p style="color:#b42318;">${error.message}</p>`;
+    dashboardRoot.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
+    showToast(error.message, "error");
   }
 };
 

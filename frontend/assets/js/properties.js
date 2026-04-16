@@ -258,7 +258,7 @@ addPropertyForm?.addEventListener("submit", async (event) => {
     // Send sellers/admins to a listing view after creation so they can verify the new record.
     const role = roleKey(getUser()?.role);
     if (role === "seller") {
-      window.location.href = "/pages/properties.html?view=mine";
+      window.location.href = "/pages/properties?view=mine";
       return;
     }
     if (role === "admin") {

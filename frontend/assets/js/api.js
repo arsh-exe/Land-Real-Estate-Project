@@ -19,6 +19,19 @@ const clearAuth = () => {
   localStorage.removeItem("lrs_user");
 };
 
+// Toast notification system
+const showToast = (message, type = "success", duration = 3000) => {
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = "fadeOut 0.4s ease-out";
+    setTimeout(() => toast.remove(), 400);
+  }, duration);
+};
+
 const roleKey = (role) => (role || "").toLowerCase();
 
 const buildHeaders = (isFormData = false) => {

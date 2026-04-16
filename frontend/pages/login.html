@@ -11,25 +11,42 @@
 
     <main class="container">
       <section class="page-header">
-        <h1>Login</h1>
-        <p>Sign in to continue to your role-based dashboard.</p>
+        <h1>🔐 Secure Login</h1>
+        <p>Sign in to your role-based dashboard and manage your land registrations.</p>
       </section>
 
-      <section class="card centered-card-sm">
+      <section class="card centered-card-sm" style="background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(238,242,247,0.5));">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <h2 style="color: var(--gov-blue); margin: 0;">Welcome Back</h2>
+          <p style="color: var(--muted);">Enter your credentials to continue</p>
+        </div>
         <form id="auth-form" data-mode="login">
-          <div>
-            <label for="email">Email</label>
-            <input class="input" id="email" name="email" type="email" required />
+          <div style="margin-bottom: 1rem;">
+            <label for="email" style="display: flex; align-items: center; gap: 0.5rem;">
+              <span>📧</span> Email Address
+            </label>
+            <input class="input" id="email" name="email" type="email" placeholder="your.email@example.com" required />
           </div>
-          <div class="mt-08">
-            <label for="password">Password</label>
-            <input class="input" id="password" name="password" type="password" required />
+          <div style="margin-bottom: 1.5rem;">
+            <label for="password" style="display: flex; align-items: center; gap: 0.5rem;">
+              <span>🔑</span> Password
+            </label>
+            <input class="input" id="password" name="password" type="password" placeholder="••••••••" required />
           </div>
-          <button class="btn btn-primary mt-1" type="submit">Login</button>
-          <p id="auth-message" class="mt-06"></p>
+          <button class="btn btn-primary" type="submit" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
+            🔓 Sign In
+          </button>
+          <p id="auth-message" class="mt-06" style="text-align: center; color: var(--danger);"></p>
         </form>
+        <div style="text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dbe5f0;">
+          <p style="color: var(--muted); margin: 0;">Don't have an account? 
+            <a href="register.html" style="color: var(--gov-blue); font-weight: 600; transition: all 0.3s ease;">Create one now →</a>
+          </p>
+        </div>
       </section>
     </main>
+
+    <footer class="footer">🔒 Your data is secured with industry-standard encryption</footer>
 
     <script src="/assets/js/api.js"></script>
     <script src="/assets/js/navbar.js"></script>

@@ -11,44 +11,85 @@
 
     <main class="container">
       <section class="page-header">
-        <h1>Create Account</h1>
-        <p>Register as Buyer, Seller, Government Officer, or Admin.</p>
+        <h1>📝 Create Your Account</h1>
+        <p>Join the Land Registry System as a Buyer, Seller, Government Officer, or Administrator.</p>
       </section>
 
-      <section class="card centered-card-md">
+      <section class="card centered-card-md" style="background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(238,242,247,0.5));">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+          <h2 style="color: var(--gov-blue); margin: 0;">Get Started</h2>
+          <p style="color: var(--muted);">It only takes a minute to set up your account</p>
+        </div>
         <form id="auth-form" data-mode="register">
           <div class="form-row">
             <div>
-              <label for="fullName">Full Name</label>
-              <input class="input" id="fullName" name="fullName" type="text" required />
+              <label for="fullName" style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>👤</span> Full Name
+              </label>
+              <input class="input" id="fullName" name="fullName" type="text" placeholder="John Doe" required />
             </div>
             <div>
-              <label for="email">Email</label>
-              <input class="input" id="email" name="email" type="email" required />
+              <label for="email" style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>📧</span> Email Address
+              </label>
+              <input class="input" id="email" name="email" type="email" placeholder="your.email@example.com" required />
             </div>
           </div>
 
           <div class="form-row mt-08">
             <div>
-              <label for="password">Password</label>
-              <input class="input" id="password" name="password" type="password" minlength="8" required />
+              <label for="password" style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔑</span> Password
+              </label>
+              <input class="input" id="password" name="password" type="password" placeholder="••••••••" minlength="8" required />
+              <p style="font-size: 0.85rem; color: var(--muted); margin: 0.3rem 0 0;">Minimum 8 characters for security</p>
             </div>
             <div>
-              <label for="role">Role</label>
-              <select id="role" name="role" required>
-                <option value="Buyer">Buyer</option>
-                <option value="Seller">Seller</option>
-                <option value="Government Officer">Government Officer</option>
-                <option value="Admin">Admin</option>
+              <label for="role" style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>👥</span> Select Your Role
+              </label>
+              <select id="role" name="role" required style="cursor: pointer;">
+                <option value="">-- Choose a role --</option>
+                <option value="Buyer">🏠 Buyer - Purchase properties</option>
+                <option value="Seller">💰 Seller - List properties</option>
+                <option value="Government Officer">🏛️ Government Officer - Verify transactions</option>
+                <option value="Admin">⚙️ Admin - System management</option>
               </select>
             </div>
           </div>
 
-          <button class="btn btn-primary mt-1" type="submit">Register</button>
-          <p id="auth-message" class="mt-06"></p>
+          <button class="btn btn-primary mt-1" type="submit" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
+            ✅ Create Account
+          </button>
+          <p id="auth-message" class="mt-06" style="text-align: center; color: var(--danger);"></p>
         </form>
+        <div style="text-align: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dbe5f0;">
+          <p style="color: var(--muted); margin: 0;">Already have an account? 
+            <a href="login.html" style="color: var(--gov-blue); font-weight: 600; transition: all 0.3s ease;">Sign in here →</a>
+          </p>
+        </div>
+      </section>
+
+      <section style="margin-top: 3rem; text-align: center;">
+        <h3 style="color: var(--muted);">Why join us?</h3>
+        <div class="grid grid-3" style="margin-top: 1rem;">
+          <div style="padding: 1rem;">
+            <p style="font-size: 2rem; margin: 0;">⚡</p>
+            <p><strong>Fast & Easy</strong><br>Complete registration in seconds</p>
+          </div>
+          <div style="padding: 1rem;">
+            <p style="font-size: 2rem; margin: 0;">🛡️</p>
+            <p><strong>Secure</strong><br>Industry-standard encryption</p>
+          </div>
+          <div style="padding: 1rem;">
+            <p style="font-size: 2rem; margin: 0;">✨</p>
+            <p><strong>Verified</strong><br>Official government portal</p>
+          </div>
+        </div>
       </section>
     </main>
+
+    <footer class="footer">🔐 Your information is safe and secure with us</footer>
 
     <script src="/assets/js/api.js"></script>
     <script src="/assets/js/navbar.js"></script>

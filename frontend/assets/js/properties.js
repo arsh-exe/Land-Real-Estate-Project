@@ -131,7 +131,7 @@ const renderProperties = (properties = []) => {
         property.area !== null && property.area !== undefined ? " sq.ft" : ""
       }</p>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-          <a class="btn btn-outline" href="/pages/property-details.html?id=${property._id}">View Details</a>
+          <a class="btn btn-outline" href="/pages/property-details?id=${property._id}">View Details</a>
           ${
             currentRole === "buyer"
               ? `<button class="btn btn-primary" data-request="${property._id}">Request Registration</button>`

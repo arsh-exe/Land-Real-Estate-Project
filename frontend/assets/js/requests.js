@@ -4,8 +4,10 @@ const transactionsRoot = document.getElementById("transactions-root");
 const makeBadge = (status) => `<span class="badge ${String(status).toLowerCase()}">${status}</span>`;
 
 const actionButtons = (request, role) => {
+  let buttons = "";
+
   if (role === "seller" && request.sellerDecision?.status === "Pending") {
-    return `
+    buttons += `
       <button class="btn btn-primary" data-action="seller" data-status="Approved" data-id="${request._id}">Approve</button>
       <button class="btn btn-danger" data-action="seller" data-status="Rejected" data-id="${request._id}">Reject</button>
     `;
@@ -16,14 +18,22 @@ const actionButtons = (request, role) => {
     request.sellerDecision?.status === "Approved" &&
     request.finalStatus === "Pending"
   ) {
-    return `
+    buttons += `
       <button class="btn btn-primary" data-action="officer" data-status="Approved" data-id="${request._id}">Verify & Approve</button>
       <button class="btn btn-danger" data-action="officer" data-status="Rejected" data-id="${request._id}">Reject</button>
+    `;
+  }
+
+  if (
+    ["admin", "government officer"].includes(role) &&
+    request.finalStatus === "Approved"
+  ) {
+    buttons += `
       <button class="btn btn-outline" data-certificate="${request._id}">Generate Certificate</button>
     `;
   }
 
-  return "";
+  return buttons;
 };
 
 const bindRequestActions = () => {

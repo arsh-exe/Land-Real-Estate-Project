@@ -22,7 +22,7 @@ const generateCertificate = async (req, res, next) => {
       return res.status(400).json({ message: "Certificate can only be generated for approved requests" });
     }
 
-    const verifyUrl = `${process.env.CLIENT_URL || "http://localhost:5500"}/pages/property-details.html?id=${registration.property._id}`;
+    const verifyUrl = `${process.env.CLIENT_URL || "http://localhost:5500"}/pages/property-details?id=${registration.property._id}`;
     const qrDataUrl = await QRCode.toDataURL(verifyUrl);
     const qrBuffer = Buffer.from(qrDataUrl.split(",")[1], "base64");
 

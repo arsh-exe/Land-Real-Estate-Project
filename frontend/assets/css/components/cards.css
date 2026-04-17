@@ -20,9 +20,71 @@
   color: var(--gov-blue);
 }
 
+.dashboard-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.dashboard-card-link:hover .card,
+.dashboard-card-link:focus-visible .card {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-4px);
+  border-color: var(--gov-gold);
+}
+
+.dashboard-metric-card {
+  height: 100%;
+  cursor: pointer;
+}
+
 .list {
   display: grid;
   gap: 0.9rem;
+}
+
+.collapsible-card summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  margin-bottom: 0.75rem;
+}
+
+.collapsible-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-card summary h3 {
+  margin: 0;
+}
+
+.collapsible-icon {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8eef7;
+  color: var(--gov-blue);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.collapsible-card[open] .collapsible-icon {
+  background: #d8e4f3;
+}
+
+.collapsible-card[open] .collapsible-icon::before {
+  content: "-";
+}
+
+.collapsible-card:not([open]) .collapsible-icon::before {
+  content: "+";
 }
 
 .property-item,

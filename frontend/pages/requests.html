@@ -15,15 +15,37 @@
         <p>Track buyer requests, seller decisions, officer verification, and all transaction logs.</p>
       </section>
 
-      <section class="card">
-        <h3>All Registration Requests</h3>
-        <div id="requests-root" class="list"></div>
-      </section>
+      <details id="section-pending" class="card collapsible-card mt-1">
+        <summary>
+          <h3>Pending Requests</h3>
+          <span class="collapsible-icon" aria-hidden="true"></span>
+        </summary>
+        <div id="requests-pending-root" class="list"></div>
+      </details>
 
-      <section class="card mt-1">
-        <h3>Transaction History</h3>
+      <details id="section-approved" class="card collapsible-card mt-1">
+        <summary>
+          <h3>Approved Requests</h3>
+          <span class="collapsible-icon" aria-hidden="true"></span>
+        </summary>
+        <div id="requests-approved-root" class="list"></div>
+      </details>
+
+      <details id="section-rejected" class="card collapsible-card mt-1">
+        <summary>
+          <h3>Rejected Requests</h3>
+          <span class="collapsible-icon" aria-hidden="true"></span>
+        </summary>
+        <div id="requests-rejected-root" class="list"></div>
+      </details>
+
+      <details id="section-transactions" class="card collapsible-card mt-1">
+        <summary>
+          <h3>Transaction History</h3>
+          <span class="collapsible-icon" aria-hidden="true"></span>
+        </summary>
         <div id="transactions-root" class="list"></div>
-      </section>
+      </details>
     </main>
 
     <footer class="footer">Request processing and transaction tracking</footer>

@@ -12,21 +12,21 @@ const renderDashboard = (role, data) => {
 
   if (role === "Buyer") {
     metricCards.push(
-      { label: "My Requests", value: data.myRequestsCount },
-      { label: "Approved", value: data.approvedCount },
-      { label: "Pending", value: data.pendingCount }
+      { label: "My Requests", value: data.myRequestsCount, href: "/pages/requests?section=pending" },
+      { label: "Approved", value: data.approvedCount, href: "/pages/requests.html" },
+      { label: "Pending", value: data.pendingCount, href: "/pages/requests?section=pending" }
     );
   } else if (role === "Seller") {
     metricCards.push(
-      { label: "My Properties", value: data.myPropertiesCount },
-      { label: "Total Requests", value: data.incomingRequestsCount },
-      { label: "Pending Decisions", value: data.pendingApprovals }
+      { label: "My Properties", value: data.myPropertiesCount, href: "/pages/properties?view=mine" },
+      { label: "Total Requests", value: data.incomingRequestsCount, href: "/pages/requests.html" },
+      { label: "Pending Decisions", value: data.pendingApprovals, href: "/pages/requests?section=pending" }
     );
   } else {
     metricCards.push(
-      { label: "Users", value: data.usersCount },
-      { label: "Properties", value: data.propertiesCount },
-      { label: "Pending Verification", value: data.pendingVerificationCount }
+      { label: "Users", value: data.usersCount, href: "/pages/admin-dashboard.html" },
+      { label: "Properties", value: data.propertiesCount, href: "/pages/properties.html" },
+      { label: "Pending Verification", value: data.pendingVerificationCount, href: "/pages/requests?section=pending" }
     );
   }
 
@@ -35,10 +35,12 @@ const renderDashboard = (role, data) => {
       ${metricCards
         .map(
           (item) => `
-            <article class="card">
-              <div>${item.label}</div>
-              <div class="metric">${item.value || 0}</div>
-            </article>
+            <a class="dashboard-card-link" href="${item.href}" aria-label="Open ${item.label}">
+              <article class="card dashboard-metric-card">
+                <div>${item.label}</div>
+                <div class="metric">${item.value || 0}</div>
+              </article>
+            </a>
           `
         )
         .join("")}

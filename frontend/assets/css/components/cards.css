@@ -54,6 +54,10 @@
   margin-bottom: 0.75rem;
 }
 
+.collapsible-card:not([open]) {
+  cursor: pointer;
+}
+
 .collapsible-card summary::-webkit-details-marker {
   display: none;
 }

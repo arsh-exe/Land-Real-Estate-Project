@@ -67,25 +67,37 @@ const renderNavbar = () => {
     // Handle external or relative URLs
     const itemUrl = new URL(href, window.location.origin);
     const itemPath = normalizePath(itemUrl.pathname);
+    const itemView = (itemUrl.searchParams.get("view") || "").toLowerCase();
+    const itemAction = (itemUrl.searchParams.get("action") || "").toLowerCase();
+    const itemMine = (itemUrl.searchParams.get("mine") || "").toLowerCase();
     
     // Exact or direct match
     const isDirectMatch = activePath === itemPath || 
                          activePath.endsWith("/" + itemPath) || 
                          (activePath.endsWith(itemPath) && (activePath.length === itemPath.length || activePath[activePath.length - itemPath.length - 1] === "/"));
 
-    // Highlight "Properties" if on property details page
+    // On property details page, pick a single appropriate properties tab.
     if (!isDirectMatch && activePath.endsWith("property-details") && itemPath.endsWith("properties")) {
-      return true;
+      const isMineLink = itemView === "mine" || itemMine === "1" || itemMine === "true";
+      const isAddLink = itemView === "add" || itemAction === "add";
+
+      // Buyers and sellers should land on "My Properties" context.
+      if (["buyer", "seller"].includes(role)) {
+        return isMineLink;
+      }
+
+      // Admin/officer should map to the generic properties list, not add/mine variants.
+      if (["admin", "government officer"].includes(role)) {
+        return !isMineLink && !isAddLink;
+      }
+
+      return false;
     }
 
     if (!isDirectMatch) return false;
 
     // Parameter checks for specific views (add, mine, verify)
     if (itemUrl.pathname.endsWith("/properties.html")) {
-      const itemView = (itemUrl.searchParams.get("view") || "").toLowerCase();
-      const itemAction = (itemUrl.searchParams.get("action") || "").toLowerCase();
-      const itemMine = (itemUrl.searchParams.get("mine") || "").toLowerCase();
-
       // Current URL states
       const isAdding = currentView === "add" || currentAction === "add";
       const isMine = currentView === "mine" || currentMine === "1" || currentMine === "true";

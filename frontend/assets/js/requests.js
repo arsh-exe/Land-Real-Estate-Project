@@ -22,6 +22,23 @@ const openRequestedSection = () => {
   activeSection.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
+const bindCollapsibleCards = () => {
+  document.querySelectorAll(".collapsible-card").forEach((card) => {
+    card.addEventListener("click", (event) => {
+      const clickedSummary = event.target.closest("summary");
+      const clickedInteractive = event.target.closest("a, button, input, select, textarea, label");
+
+      // Keep native summary toggle behavior and ignore interactive controls.
+      if (clickedSummary || clickedInteractive) return;
+
+      // When collapsed, clicking anywhere on the card opens it.
+      if (!card.open) {
+        card.open = true;
+      }
+    });
+  });
+};
+
 const makeBadge = (status) => `<span class="badge ${String(status).toLowerCase()}">${status}</span>`;
 
 const actionButtons = (request, role) => {
@@ -210,6 +227,7 @@ const loadTransactions = async () => {
 };
 
 window.addEventListener("DOMContentLoaded", () => {
+  bindCollapsibleCards();
   openRequestedSection();
   loadRequests();
   loadTransactions();

@@ -28,6 +28,7 @@ const createRequest = async (req, res, next) => {
 
     const registration = await Registration.create({
       registrationId: generateId("REG"),
+      referenceId: generateId("REF"),
       property: property._id,
       buyer: req.user._id,
       seller: property.owner,

@@ -26,6 +26,10 @@ const propertySchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    titleNumber: {
+      type: String,
+      trim: true,
+    },
     title: {
       type: String,
       required: true,
@@ -70,5 +74,12 @@ const propertySchema = new mongoose.Schema(
 );
 
 propertySchema.index({ location: 1, type: 1, price: 1 });
+propertySchema.index(
+  { titleNumber: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { titleNumber: { $type: "string" } },
+  }
+);
 
 module.exports = mongoose.model("Property", propertySchema);

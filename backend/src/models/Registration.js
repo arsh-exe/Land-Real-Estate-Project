@@ -7,6 +7,10 @@ const registrationSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    referenceId: {
+      type: String,
+      trim: true,
+    },
     property: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Property",
@@ -56,5 +60,12 @@ const registrationSchema = new mongoose.Schema(
 );
 
 registrationSchema.index({ buyer: 1, seller: 1, finalStatus: 1 });
+registrationSchema.index(
+  { referenceId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { referenceId: { $type: "string" } },
+  }
+);
 
 module.exports = mongoose.model("Registration", registrationSchema);

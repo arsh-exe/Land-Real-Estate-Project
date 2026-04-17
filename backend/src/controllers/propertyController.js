@@ -4,10 +4,12 @@ const generateId = require("../utils/generateId");
 
 const createProperty = async (req, res, next) => {
   try {
-    const { title, location, price, area, type } = req.body;
+    const { title, titleNumber, location, price, area, type } = req.body;
+    const normalizedTitleNumber = String(titleNumber || "").trim();
 
     const property = await Property.create({
       propertyId: generateId("PROP"),
+      titleNumber: normalizedTitleNumber || generateId("TITLE"),
       title,
       location,
       price,

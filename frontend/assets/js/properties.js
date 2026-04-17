@@ -474,52 +474,46 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
     .map(
       (property) => {
         const ownerId = property?.owner?._id || property?.owner?.id || property?.owner;
-        const isOwner = Boolean(currentUserId) && String(ownerId) === String(currentUserId);
-        const isAdmin = currentRole === "admin";
-        const approvalStatus = String(property?.approval?.status || "Approved");
-        const approvalClass =
-          approvalStatus.toLowerCase() === "approved"
-            ? "available"
-            : approvalStatus.toLowerCase() === "rejected"
-            ? "sold"
-            : "pending";
-        const imageDocs = getImageDocuments(property).filter((doc) => Boolean(doc?.filePath));
-        const imageUrls = imageDocs.map((doc) => `${SERVER_URL}${doc.filePath}`);
+        const isOwner = currentUser && String(ownerId) === String(currentUser?._id || currentUser?.id);
+        const imageUrls = Array.isArray(property.images)
+          ? property.images
+          : getImageDocuments(property)
+              .filter((doc) => Boolean(doc?.filePath))
+              .map((doc) => `${SERVER_URL}${doc.filePath}`);
         const hasImage = imageUrls.length > 0;
-        const encodedImages = encodeURIComponent(JSON.stringify(imageUrls));
-        const status = propertyStatusMap.get(String(property._id)) || "available";
-        const statusClass = getPropertyStatusClass(status);
-        const sellEditPayload = encodeURIComponent(
-          JSON.stringify({
-            title: property.title,
-            location: property.location,
-            type: property.type,
-            price: property.price,
-            area: property.area,
-          })
-        );
+        const encodedImages = hasImage ? encodeURIComponent(JSON.stringify(imageUrls)) : "";
+
+        const isVerified = property.approval?.status === "Approved";
+
+        const verificationBadge = `
+      <span class="badge overlay-badge ${isVerified ? "verified" : ""}" style="margin-bottom: 4px; display: inline-block;">
+        ${isVerified ? "✓ Verified" : property.approval?.status || "Pending"}
+      </span>
+    `;
+
+        const marketBadge = property.isOpenForSale
+          ? `<span class="badge" style="background: var(--success); color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🟢 For Sale</span>`
+          : `<span class="badge" style="background: #64748b; color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🔴 Off Market</span>`;
+
+        const badgesHtml = `
+      <div class="property-badge-overlay" style="top: 12px; left: 12px; display: flex; flex-direction: column; align-items: flex-start; z-index: 10;">
+        ${verificationBadge}
+        ${marketBadge}
+      </div>
+    `;
+
+        const isAdmin = currentRole === "admin";
+        const buyButtonHtml =
+          currentRole === "user" && !isOwner
+            ? property.isOpenForSale
+              ? `<button class="btn btn-primary btn-sm" data-request="${property._id}">Request to Buy</button>`
+              : `<button class="btn btn-secondary btn-sm" disabled style="cursor:not-allowed; opacity:0.7;">Not For Sale</button>`
+            : "";
+
         const actionButtons = `
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
-            <a href="/pages/property-details?id=${property._id}" class="btn btn-outline btn-sm">View Details</a>
-            ${
-              pageMode === "mine" && isOwner && currentRole === "user"
-                ? approvalStatus === "Approved"
-                  ? `<button class="btn btn-primary btn-sm" data-sell-edit="${property._id}" data-sell-payload="${sellEditPayload}">${
-                      property.isOpenForSale ? "Update Sale Details" : "Want to Sell"
-                    }</button>
-                     ${
-                       property.isOpenForSale
-                         ? `<button class="btn btn-outline btn-sm" data-sale-stop="${property._id}">Stop Selling</button>`
-                         : ""
-                     }`
-                  : `<button class="btn btn-secondary btn-sm" data-doc-edit="${property._id}" data-sell-payload="${sellEditPayload}">Update Documents</button>`
-                : ""
-            }
-            ${
-              currentRole === "user" && !isOwner
-                ? `<button class="btn btn-primary btn-sm" data-request="${property._id}">Request Registration</button>`
-                : ""
-            }
+            <a href="/pages/property-details.html?id=${property._id}" class="btn btn-outline btn-sm">View Details</a>
+            ${buyButtonHtml}
             ${
               isAdmin
                 ? `<button class="btn btn-secondary btn-sm" data-edit="${property._id}">Update</button>
@@ -528,13 +522,18 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
             }
           </div>
         `;
-        const imageMarkup = hasImage
-          ? `<div class="carousel-track" style="transform: translateX(0px);">
-               ${imageUrls
-                 .map(
-                   (url) => `<img class="property-image" src="${url}" alt="${property.title} image" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'property-image-placeholder\\'>Image failed to load</div>'" />`
-                 )
-                 .join("")}
+
+        return `
+  <article class="property-item card" data-id="${property._id}">
+    
+    <div class="property-media ${hasImage ? "property-carousel" : ""}" 
+         ${hasImage ? `data-images="${encodedImages}" data-index="0"` : ""}>
+      ${badgesHtml}
+
+      ${
+        hasImage
+          ? `<div class="carousel-track" style="transform: translateX(0%);">
+               ${imageUrls.map((url) => `<img class="property-image" src="${url}" loading="lazy" />`).join("")}
                ${imageUrls.length > 1 ? `<img class="property-image" src="${imageUrls[0]}" aria-hidden="true" loading="lazy" />` : ""}
              </div>
              ${
@@ -544,39 +543,33 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
                     </div>`
                  : ""
              }`
-          : `<div class="property-image-placeholder">No image found</div>`;
+          : `<div class="property-image-placeholder">No Image Available</div>`
+      }
+    </div>
 
-        return `
-      <article class="property-item">
-        <div class="property-media ${hasImage ? "property-carousel" : ""}" ${
-          hasImage ? `data-images="${encodedImages}" data-index="0"` : ""
-        }>
-          ${imageMarkup}
-        </div>
-        <h3>${property.title}</h3>
-        ${pageMode === "mine" && status === "sold" ? "" : `<p><span class="badge ${statusClass}">${status}</span></p>`}
-        <p><span class="badge ${approvalClass}">approval: ${approvalStatus.toLowerCase()}</span></p>
-        ${
-          pageMode === "mine"
-            ? `<p><span class="badge ${property.isOpenForSale ? "available" : "pending"}">${
-                property.isOpenForSale ? "open for sale" : "not for sale"
-              }</span></p>`
-            : ""
-        }
-        <p>${property.location} • ${property.type}</p>
-        <p><strong>${toCurrency(property.price)}</strong> • ${property.area ?? "Area not specified"}${
-        property.area !== null && property.area !== undefined ? " sq.ft" : ""
-      }</p>
+    <div class="property-info">
+      <h2 class="property-price">${toCurrency(property.price)}</h2>
+      
+      <div class="property-meta">
+        ${property.type || "Land Asset"} • ${property.area ? `${property.area} Sq Ft` : "Size N/A"}
+      </div>
+      
+      <h3 class="property-title">${property.title}</h3>
+      <p class="property-location">📍 ${property.location}</p>
+      
+      <div style="margin-top: auto;">
         ${actionButtons}
-      </article>
-    `;
+      </div>
+    </div>
+  </article>
+`;
       }
     )
     .join("");
 
   propertyList.querySelectorAll(".property-media").forEach((media, index) => {
     const propertyCard = media.closest(".property-item");
-    const detailLink = propertyCard?.querySelector('a[href^="/pages/property-details?id="]');
+    const detailLink = propertyCard?.querySelector('a[href^="/pages/property-details"]');
     if (!detailLink) return;
 
     media.addEventListener("click", (event) => {

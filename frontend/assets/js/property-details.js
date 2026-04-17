@@ -39,22 +39,39 @@ const resolveImageUrl = (image) => {
   return path.startsWith("http") ? path : `${SERVER_URL}${path}`;
 };
 
-const renderDetailsSlider = (images) => {
+const renderDetailsSlider = (property) => {
+  const images = Array.isArray(property?.images) ? property.images : [];
+
+  const isVerified = property?.approval?.status === "Approved";
+  const verificationBadge = `
+    <span class="badge overlay-badge ${isVerified ? "verified" : ""}" style="margin-bottom: 5px; display: inline-block;">
+      ${isVerified ? "✓ Verified" : property?.approval?.status || "Pending Verification"}
+    </span>
+  `;
+
+  const marketBadge = property?.isOpenForSale
+    ? `<span class="badge" style="background: var(--success); color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🟢 For Sale</span>`
+    : `<span class="badge" style="background: #64748b; color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🔴 Off Market</span>`;
+
+  const badgesHtml = `
+    <div class="property-badge-overlay" style="top: 16px; left: 16px; display: flex; flex-direction: column; align-items: flex-start;">
+      ${verificationBadge}
+      ${marketBadge}
+    </div>
+  `;
+
   if (!images || images.length === 0) {
     return `<div class="details-slider-container" style="display:flex; align-items:center; justify-content:center; background:#f1f5f9;">
+              ${badgesHtml}
               <span style="color:var(--muted); font-weight:600;">No Images Available</span>
-            </div>`;
-  }
-
-  if (images.length === 1) {
-    return `<div class="details-slider-container">
-              <img class="details-slide" src="${images[0]}" alt="Property View" loading="lazy" />
             </div>`;
   }
 
   // Track + clone for seamless looping
   return `
     <div class="details-slider-container" id="property-slider" data-index="0" data-total="${images.length}" data-animating="false">
+      ${badgesHtml}
+
       <div class="details-slider-track" id="slider-track" style="transform: translateX(0%);">
         ${images.map((url) => `<img class="details-slide" src="${url}" alt="Property View" loading="lazy" />`).join("")}
         <img class="details-slide" src="${images[0]}" aria-hidden="true" loading="lazy" />
@@ -152,20 +169,27 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
   });
   const ownershipHistory = Array.isArray(property.ownershipHistory) ? property.ownershipHistory : [];
   const legalStatus = property?.approval?.status || propertyStatus || "Pending";
-  const statusClass = getPropertyStatusClass(propertyStatus);
-  const canBuy = !isOwner && ["user", "buyer"].includes(currentRole);
-  const actionButtonsHtml = canBuy
-    ? `<button class="btn btn-primary" data-request-registration="${property._id}">${
-        statusClass === "sold" ? "Sold" : "Buy"
-      }</button>`
-    : isOwner
-    ? `<button class="btn btn-outline" disabled style="border-color: var(--success); color: var(--success); cursor: default;">✓ Owned by You</button>`
-    : "";
+  const sliderProperty = {
+    ...property,
+    images: imageUrls,
+  };
+
+  let actionButtonsHtml = "";
+
+  if (currentRole === "user" && !isOwner) {
+    if (property.isOpenForSale) {
+      actionButtonsHtml += `<button class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1.1rem;" data-request="${property._id}">Request to Buy</button>`;
+    } else {
+      actionButtonsHtml += `<button class="btn btn-secondary" style="width: 100%; padding: 12px; cursor: not-allowed;" disabled>Not Currently For Sale</button>`;
+    }
+  } else if (isOwner) {
+    actionButtonsHtml += `<button class="btn btn-outline" disabled style="border-color: var(--success); color: var(--success); cursor: default;">✓ Owned by You</button>`;
+  }
 
   detailsRoot.innerHTML = `
     <div class="property-details-layout">
       <div class="property-main-content">
-        ${renderDetailsSlider(imageUrls)}
+        ${renderDetailsSlider(sliderProperty)}
 
         <div class="property-header">
           <h1>${property.title}</h1>
@@ -244,8 +268,14 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
               <span>Current Owner</span>
               <strong>${property.owner?.fullName || "Private"}</strong>
             </div>
+            <div class="sidebar-meta-item">
+              <span>Market Status</span>
+              <strong style="color: ${property.isOpenForSale ? "var(--success)" : "#64748b"};">
+                ${property.isOpenForSale ? "Available to Buy" : "Off Market"}
+              </strong>
+            </div>
             <div class="sidebar-meta-item" style="border-bottom: none;">
-              <span>Legal Status</span>
+              <span>Gov. Verification</span>
               <strong style="color: ${legalStatus === "Approved" ? "var(--success)" : "inherit"};">
                 ${legalStatus === "Approved" ? "✓ Verified" : legalStatus}
               </strong>
@@ -310,12 +340,12 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
     });
   }
 
-  detailsRoot.querySelectorAll("[data-request-registration]").forEach((button) => {
+  detailsRoot.querySelectorAll("[data-request]").forEach((button) => {
     button.addEventListener("click", async () => {
       try {
         await apiRequest("/registrations", {
           method: "POST",
-          body: JSON.stringify({ propertyId: button.dataset.requestRegistration }),
+          body: JSON.stringify({ propertyId: button.dataset.request }),
         });
         showToast("Request submitted successfully", "success");
       } catch (error) {

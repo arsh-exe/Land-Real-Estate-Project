@@ -5,6 +5,29 @@ const badgeClass = (status) => {
   return status.toLowerCase();
 };
 
+const toIdString = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") return value._id || value.id || "";
+  return "";
+};
+
+const getRecentActivityHref = (item = {}, status = "") => {
+  const propertyId = toIdString(item.property);
+  if (propertyId) {
+    return `/pages/property-details?id=${propertyId}`;
+  }
+
+  if (item.transactionId) {
+    return "/pages/requests?section=transactions";
+  }
+
+  const normalizedStatus = String(status).toLowerCase();
+  if (normalizedStatus === "approved") return "/pages/requests?section=approved";
+  if (normalizedStatus === "rejected") return "/pages/requests?section=rejected";
+  return "/pages/requests?section=pending";
+};
+
 const renderDashboard = (role, data) => {
   if (!dashboardRoot) return;
 
@@ -53,11 +76,14 @@ const renderDashboard = (role, data) => {
           .map((item) => {
             const status = item.finalStatus || item.status || "Pending";
             const label = item.registrationId || item.transactionId || "Request";
+            const href = getRecentActivityHref(item, status);
             return `
-              <article class="txn-item">
-                <strong>${label}</strong>
-                <div class="badge ${badgeClass(status)}">${status}</div>
-              </article>
+              <a class="recent-activity-link" href="${href}" aria-label="Open ${label}">
+                <article class="txn-item">
+                  <strong>${label}</strong>
+                  <div class="badge ${badgeClass(status)}">${status}</div>
+                </article>
+              </a>
             `;
           })
           .join("") || "<p>No recent activity.</p>"}

@@ -114,13 +114,28 @@ const bindRequestActions = () => {
   });
 };
 
+const bindRequestCardNavigation = () => {
+  document.querySelectorAll(".request-item[data-property-id]").forEach((card) => {
+    card.classList.add("request-clickable");
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("a") || event.target.closest("button") || event.target.closest("input")) {
+        return;
+      }
+
+      const propertyId = card.dataset.propertyId;
+      if (!propertyId) return;
+      window.location.href = `/pages/property-details?id=${propertyId}`;
+    });
+  });
+};
+
 const renderRequestList = (root, requests, role, emptyMessage) => {
   if (!root) return;
 
   root.innerHTML = (requests || [])
     .map(
       (request) => `
-        <article class="request-item">
+        <article class="request-item" data-property-id="${request.property?._id || ""}">
           <h3>${request.registrationId}</h3>
           <p><strong>Property:</strong> ${request.property?.title || "N/A"}</p>
           <p><strong>Buyer:</strong> ${request.buyer?.fullName || "N/A"}</p>
@@ -183,6 +198,7 @@ const loadRequests = async () => {
     renderRequestList(rejectedRequestsRoot, rejectedRequests, role, "No rejected requests found.");
 
     bindRequestActions();
+    bindRequestCardNavigation();
   } catch (error) {
     const errorMarkup = `<p style="color:var(--danger);">${error.message}</p>`;
     pendingRequestsRoot.innerHTML = errorMarkup;

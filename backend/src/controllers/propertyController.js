@@ -1,5 +1,6 @@
 const Document = require("../models/Document");
 const Property = require("../models/Property");
+const Registration = require("../models/Registration");
 const generateId = require("../utils/generateId");
 
 const createProperty = async (req, res, next) => {
@@ -105,7 +106,26 @@ const getPropertyById = async (req, res, next) => {
       return res.status(404).json({ message: "Property not found" });
     }
 
-    return res.status(200).json({ property });
+    const approvedRegistration = await Registration.findOne({
+      property: property._id,
+      finalStatus: "Approved",
+    }).select("_id");
+
+    let propertyStatus = "Available";
+    if (approvedRegistration) {
+      propertyStatus = "Sold";
+    } else {
+      const pendingRegistration = await Registration.findOne({
+        property: property._id,
+        finalStatus: "Pending",
+      }).select("_id");
+
+      if (pendingRegistration) {
+        propertyStatus = "Pending Request";
+      }
+    }
+
+    return res.status(200).json({ property, propertyStatus });
   } catch (error) {
     next(error);
   }

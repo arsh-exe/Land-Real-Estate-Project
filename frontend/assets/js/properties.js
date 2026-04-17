@@ -78,6 +78,45 @@ const toCurrency = (amount) =>
     Number(amount || 0)
   );
 
+const getPropertyStatusClass = (status = "") => {
+  const normalized = String(status).toLowerCase();
+  if (normalized === "sold") return "sold";
+  if (normalized === "pending request") return "pending";
+  return "available";
+};
+
+const buildPropertyStatusMap = (registrations = []) => {
+  const map = new Map();
+
+  registrations.forEach((registration) => {
+    const propertyId =
+      registration?.property?._id ||
+      registration?.property?.id ||
+      registration?.property;
+    if (!propertyId) return;
+
+    const status = String(registration.finalStatus || "Pending").toLowerCase();
+    const previous = map.get(String(propertyId)) || "available";
+
+    // Priority: sold > pending request > available
+    if (status === "approved") {
+      map.set(String(propertyId), "sold");
+      return;
+    }
+
+    if (status === "pending" && previous !== "sold") {
+      map.set(String(propertyId), "pending request");
+      return;
+    }
+
+    if (!map.has(String(propertyId))) {
+      map.set(String(propertyId), "available");
+    }
+  });
+
+  return map;
+};
+
 const getImageDocuments = (property = {}) => {
   const docs = Array.isArray(property.documents) ? property.documents : [];
   return docs.filter((doc) => (doc?.mimeType || "").toLowerCase().startsWith("image/"));
@@ -169,7 +208,7 @@ const startCarouselAutoplay = (carousel) => {
   }, CAROUSEL_INTERVAL_MS);
 };
 
-const renderProperties = (properties = []) => {
+const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
   if (!propertyList) return;
   const currentUser = getUser();
   const currentRole = roleKey(currentUser?.role);
@@ -193,6 +232,8 @@ const renderProperties = (properties = []) => {
         const imageUrls = imageDocs.map((doc) => `${SERVER_URL}${doc.filePath}`);
         const hasImage = imageUrls.length > 0;
         const encodedImages = encodeURIComponent(JSON.stringify(imageUrls));
+        const status = propertyStatusMap.get(String(property._id)) || "available";
+        const statusClass = getPropertyStatusClass(status);
 
         return `
       <article class="property-item">
@@ -206,6 +247,7 @@ const renderProperties = (properties = []) => {
           }
         </div>
         <h3>${property.title}</h3>
+        <p><span class="badge ${statusClass}">${status}</span></p>
         <p>${property.location} • ${property.type}</p>
         <p><strong>${toCurrency(property.price)}</strong> • ${property.area ?? "Area not specified"}${
         property.area !== null && property.area !== undefined ? " sq.ft" : ""
@@ -358,8 +400,13 @@ const loadProperties = async (query = "") => {
     const endpoint = shouldLoadMine
       ? "/properties/my"
       : `/properties${query ? `?${query}` : ""}`;
-    const data = await apiRequest(endpoint);
-    renderProperties(data.properties || []);
+    const [propertyData, registrationData] = await Promise.all([
+      apiRequest(endpoint),
+      apiRequest("/registrations").catch(() => ({ registrations: [] })),
+    ]);
+
+    const statusMap = buildPropertyStatusMap(registrationData.registrations || []);
+    renderProperties(propertyData.properties || [], statusMap);
   } catch (error) {
     propertyList.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
     showToast(error.message, "error");

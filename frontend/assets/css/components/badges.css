@@ -22,6 +22,16 @@
   background: #fee2e2;
 }
 
+.badge.sold {
+  color: #7f1d1d;
+  background: #fecaca;
+}
+
+.badge.available {
+  color: #14532d;
+  background: #dcfce7;
+}
+
 .badge {
   animation: fadeInUp 0.5s ease-out;
   padding: 0.35rem 0.8rem;

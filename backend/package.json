@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "migrate:roles": "node scripts/migrate-legacy-roles.js"
   },
   "keywords": [],
   "author": "",

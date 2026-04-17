@@ -11,7 +11,7 @@ Production-ready full-stack MERN-style application using **MongoDB, Express, Nod
 - Full registration workflow (Buyer -> Seller -> Officer)
 - Search and filters by location, type, price, and sorting
 - Role dashboards and transaction history
-- PDF certificate generation with QR verification URL
+- PDF certificate generation with QR verification URL.
 
 ## Project Structure
 

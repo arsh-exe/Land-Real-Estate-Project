@@ -1,6 +1,7 @@
 const propertyList = document.getElementById("property-list");
 const propertyFilterForm = document.getElementById("property-filter-form");
 const addPropertyForm = document.getElementById("add-property-form");
+const CAROUSEL_INTERVAL_MS = 2000;
 
 const parsePropertiesPageMode = () => {
   const user = getUser();
@@ -77,9 +78,9 @@ const toCurrency = (amount) =>
     Number(amount || 0)
   );
 
-const findFirstImageDocument = (property = {}) => {
+const getImageDocuments = (property = {}) => {
   const docs = Array.isArray(property.documents) ? property.documents : [];
-  return docs.find((doc) => (doc?.mimeType || "").toLowerCase().startsWith("image/")) || null;
+  return docs.filter((doc) => (doc?.mimeType || "").toLowerCase().startsWith("image/"));
 };
 
 const normalizeProperty = (property = {}) => {
@@ -109,6 +110,70 @@ const queryStringFromForm = (formData) => {
   return params.toString();
 };
 
+const parseCarouselImages = (carousel) => {
+  try {
+    return JSON.parse(decodeURIComponent(carousel.dataset.images || "%5B%5D"));
+  } catch (_error) {
+    return [];
+  }
+};
+
+const setCarouselFrame = (carousel, nextIndex) => {
+  const imageEl = carousel.querySelector(".property-image");
+  if (!imageEl) return;
+
+  const images = parseCarouselImages(carousel);
+  if (images.length === 0) return;
+
+  const safeIndex = ((nextIndex % images.length) + images.length) % images.length;
+  const nextSrc = images[safeIndex];
+  if (!nextSrc || imageEl.src === nextSrc) {
+    return;
+  }
+
+  carousel.dataset.index = String(safeIndex);
+  imageEl.classList.add("is-fading");
+
+  // Preload next image before swap to avoid abrupt flashing during transitions.
+  const preload = new Image();
+  preload.onload = () => {
+    imageEl.src = nextSrc;
+    window.requestAnimationFrame(() => {
+      imageEl.classList.remove("is-fading");
+    });
+  };
+  preload.onerror = () => {
+    imageEl.classList.remove("is-fading");
+  };
+  preload.src = nextSrc;
+
+  const countEl = carousel.querySelector("[data-carousel-count]");
+  if (countEl) {
+    countEl.textContent = `${safeIndex + 1}/${images.length}`;
+  }
+};
+
+const moveCarousel = (carousel, direction) => {
+  const images = parseCarouselImages(carousel);
+  if (images.length < 2) return;
+  const currentIndex = Number(carousel.dataset.index || "0");
+  setCarouselFrame(carousel, currentIndex + direction);
+};
+
+const startCarouselAutoplay = (carousel) => {
+  const images = parseCarouselImages(carousel);
+  if (images.length < 2) return;
+
+  const timer = window.setInterval(() => {
+    if (!carousel.isConnected) {
+      window.clearInterval(timer);
+      return;
+    }
+
+    moveCarousel(carousel, 1);
+  }, CAROUSEL_INTERVAL_MS);
+};
+
 const renderProperties = (properties = []) => {
   if (!propertyList) return;
   const currentUser = getUser();
@@ -129,15 +194,26 @@ const renderProperties = (properties = []) => {
         const canManage =
           currentRole === "admin" ||
           (currentRole === "seller" && isOwner);
-        const imageDoc = findFirstImageDocument(property);
-        const hasImage = Boolean(imageDoc?.filePath);
+        const imageDocs = getImageDocuments(property).filter((doc) => Boolean(doc?.filePath));
+        const imageUrls = imageDocs.map((doc) => `${SERVER_URL}${doc.filePath}`);
+        const hasImage = imageUrls.length > 0;
+        const encodedImages = encodeURIComponent(JSON.stringify(imageUrls));
 
         return `
       <article class="property-item">
-        <div class="property-media">
+        <div class="property-media ${hasImage ? "property-carousel" : ""}" ${
+          hasImage ? `data-images="${encodedImages}" data-index="0"` : ""
+        }>
           ${
             hasImage
-              ? `<img class="property-image" src="${SERVER_URL}${imageDoc.filePath}" alt="${property.title} image" loading="lazy" />`
+              ? `<img class="property-image" src="${imageUrls[0]}" alt="${property.title} image" loading="lazy" onError="this.parentElement.innerHTML='<div class=\\'property-image-placeholder\\'>Image failed to load</div>'" />
+                 ${
+                   imageUrls.length > 1
+                     ? `<button type="button" class="property-media-nav prev" data-carousel-action="prev" aria-label="Previous image">&#8249;</button>
+                        <button type="button" class="property-media-nav next" data-carousel-action="next" aria-label="Next image">&#8250;</button>
+                        <div class="property-media-count" data-carousel-count>1/${imageUrls.length}</div>`
+                     : ""
+                 }`
               : `<div class="property-image-placeholder">No image found</div>`
           }
         </div>
@@ -234,7 +310,7 @@ const renderProperties = (properties = []) => {
       if (!files.length) return;
 
       const formData = new FormData();
-      files.forEach((file) => formData.append("documents", file));
+      files.forEach((file) => formData.append("images", file));
 
       try {
         await apiRequest(`/properties/${input.dataset.uploadImage}`, {
@@ -249,6 +325,20 @@ const renderProperties = (properties = []) => {
         input.value = "";
       }
     });
+  });
+
+  propertyList.querySelectorAll(".property-carousel [data-carousel-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const carousel = button.closest(".property-carousel");
+      if (!carousel) return;
+
+      const direction = button.dataset.carouselAction === "prev" ? -1 : 1;
+      moveCarousel(carousel, direction);
+    });
+  });
+
+  propertyList.querySelectorAll(".property-carousel").forEach((carousel) => {
+    startCarouselAutoplay(carousel);
   });
 };
 

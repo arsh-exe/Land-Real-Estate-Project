@@ -50,8 +50,14 @@
           <div class="form-row mt-08">
             <input class="input" name="price" type="number" placeholder="Price" required />
             <input class="input" name="area" type="number" placeholder="Area (sq.ft)" required />
+          </div>
+          <div class="form-row mt-08">
             <div>
-              <label for="documents">Property documents</label>
+              <label for="property-images">Upload Property Images</label>
+              <input class="input" id="property-images" name="images" type="file" multiple accept="image/*" />
+            </div>
+            <div>
+              <label for="documents">Property Documents</label>
               <input class="input" id="documents" name="documents" type="file" multiple />
             </div>
           </div>

@@ -63,18 +63,28 @@ CLIENT_URL=http://localhost:5500
 
 ### 3) Install dependencies
 
-Backend:
+All required Node modules are already listed in each folder's `package.json`.
+You do not need to install packages one-by-one.
+
+Backend modules:
 
 ```bash
 cd backend
 npm install
 ```
 
-Frontend (open a second terminal from repo root):
+Frontend modules (open a second terminal from repo root):
 
 ```bash
 cd frontend
 npm install
+```
+
+Quick install from repo root:
+
+```bash
+cd backend && npm i
+cd ../frontend && npm i
 ```
 
 ### 4) Start the application

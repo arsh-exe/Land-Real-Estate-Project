@@ -18,7 +18,13 @@ const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    // Frontend is served from a different origin (localhost:5500), so uploaded assets
+    // must be loadable cross-origin.
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 const allowedOrigins = new Set([
   process.env.CLIENT_URL,

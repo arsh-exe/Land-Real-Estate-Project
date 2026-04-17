@@ -24,9 +24,15 @@ const createProperty = async (req, res, next) => {
       ],
     });
 
-    if (req.files && req.files.length > 0) {
+    // Handle files from both 'images' and 'documents' fields
+    const allFiles = [
+      ...(req.files?.images || []),
+      ...(req.files?.documents || [])
+    ];
+
+    if (allFiles.length > 0) {
       const docs = await Promise.all(
-        req.files.map((file) =>
+        allFiles.map((file) =>
           Document.create({
             documentId: generateId("DOC"),
             originalName: file.originalname,
@@ -44,7 +50,12 @@ const createProperty = async (req, res, next) => {
       await property.save();
     }
 
-    return res.status(201).json({ message: "Property created", property });
+    // Re-fetch and populate the property before returning
+    const populatedProperty = await Property.findById(property._id)
+      .populate("owner", "fullName email role")
+      .populate("documents");
+
+    return res.status(201).json({ message: "Property created", property: populatedProperty });
   } catch (error) {
     next(error);
   }
@@ -130,9 +141,15 @@ const updateProperty = async (req, res, next) => {
       }
     });
 
-    if (req.files && req.files.length > 0) {
+    // Handle files from both 'images' and 'documents' fields
+    const allFiles = [
+      ...(req.files?.images || []),
+      ...(req.files?.documents || [])
+    ];
+
+    if (allFiles.length > 0) {
       const docs = await Promise.all(
-        req.files.map((file) =>
+        allFiles.map((file) =>
           Document.create({
             documentId: generateId("DOC"),
             originalName: file.originalname,
@@ -151,7 +168,12 @@ const updateProperty = async (req, res, next) => {
 
     await property.save();
 
-    return res.status(200).json({ message: "Property updated", property });
+    // Re-fetch and populate the property before returning
+    const populatedProperty = await Property.findById(property._id)
+      .populate("owner", "fullName email role")
+      .populate("documents");
+
+    return res.status(200).json({ message: "Property updated", property: populatedProperty });
   } catch (error) {
     next(error);
   }

@@ -33,7 +33,10 @@ router.post(
   "/",
   protect,
   authorize("Seller", "Admin"),
-  upload.array("documents", 5),
+  upload.fields([
+    { name: "images", maxCount: 10 },
+    { name: "documents", maxCount: 5 }
+  ]),
   [
     body("title").trim().notEmpty().withMessage("Title is required"),
     body("location").trim().notEmpty().withMessage("Location is required"),
@@ -52,7 +55,10 @@ router.put(
   "/:id",
   protect,
   authorize("Seller", "Admin", "Government Officer"),
-  upload.array("documents", 5),
+  upload.fields([
+    { name: "images", maxCount: 10 },
+    { name: "documents", maxCount: 5 }
+  ]),
   propertyValidation,
   validate,
   updateProperty

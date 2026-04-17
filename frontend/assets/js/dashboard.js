@@ -219,7 +219,7 @@ const getActivityContext = (item = {}) => {
 const getRecentActivityHref = (item = {}, status = "") => {
   const propertyId = toIdString(item.property);
   if (propertyId) {
-    return `/pages/property-details?id=${propertyId}`;
+    return `/pages/property-details.html?id=${propertyId}`;
   }
 
   if (item.transactionId) {

@@ -78,7 +78,7 @@ const renderPropertyApprovalList = (properties = []) => {
             <p><strong>Price:</strong> ₹${Number(property.price || 0).toLocaleString("en-IN")}</p>
           </div>
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
-            <a href="/pages/property-details?id=${property._id}" class="btn btn-outline">View Details</a>
+            <a href="/pages/property-details.html?id=${property._id}" class="btn btn-outline">View Details</a>
             <button class="btn btn-primary" data-property-approval-action="Approved" data-property-approval-id="${property._id}">Approve Property</button>
             <button class="btn btn-danger" data-property-approval-action="Rejected" data-property-approval-id="${property._id}">Reject Property</button>
           </div>
@@ -273,7 +273,7 @@ const bindRequestCardNavigation = () => {
 
       const propertyId = card.dataset.propertyId;
       if (!propertyId) return;
-      window.location.href = `/pages/property-details?id=${propertyId}`;
+      window.location.href = `/pages/property-details.html?id=${propertyId}`;
     });
   });
 };

@@ -577,6 +577,11 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
         return;
       }
 
+      const propertyId = propertyCard?.dataset.id;
+      if (propertyId) {
+        sessionStorage.setItem("selectedPropertyId", propertyId);
+      }
+
       window.location.href = detailLink.getAttribute("href");
     });
 
@@ -595,6 +600,16 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
         alert("Request submitted successfully");
       } catch (error) {
         alert(error.message);
+      }
+    });
+  });
+
+  propertyList.querySelectorAll('a[href^="/pages/property-details"]').forEach((link) => {
+    link.addEventListener("click", () => {
+      const propertyCard = link.closest(".property-item");
+      const propertyId = propertyCard?.dataset.id;
+      if (propertyId) {
+        sessionStorage.setItem("selectedPropertyId", propertyId);
       }
     });
   });

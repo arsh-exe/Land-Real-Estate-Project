@@ -357,11 +357,23 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
 
 const loadPropertyDetails = async () => {
   if (!detailsRoot) return;
-  const id = new URLSearchParams(window.location.search).get("id");
+  const params = new URLSearchParams(window.location.search);
+  const pathMatch = window.location.pathname.match(/property-details\/(.+)$/);
+  const idFromPath = pathMatch?.[1] ? decodeURIComponent(pathMatch[1]) : "";
+  const id = params.get("id") || idFromPath || sessionStorage.getItem("selectedPropertyId");
+
   if (!id) {
-    detailsRoot.innerHTML = "<p>Property id is missing</p>";
+    detailsRoot.innerHTML = `
+      <article class="card" style="max-width: 560px;">
+        <h3 style="margin-top: 0;">Property id is missing</h3>
+        <p>Please open a property from the listings page to view full details.</p>
+        <a href="/pages/properties.html" class="btn btn-primary">Go to Properties</a>
+      </article>
+    `;
     return;
   }
+
+  sessionStorage.setItem("selectedPropertyId", id);
 
   // Show skeleton loading state
   detailsRoot.innerHTML = `

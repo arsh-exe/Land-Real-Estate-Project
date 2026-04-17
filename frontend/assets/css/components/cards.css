@@ -20,6 +20,12 @@
   color: var(--gov-blue);
 }
 
+.metric.metric-currency {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
 .dashboard-card-link {
   display: block;
   color: inherit;

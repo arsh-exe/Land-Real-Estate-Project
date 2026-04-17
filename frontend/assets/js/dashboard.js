@@ -12,6 +12,13 @@ const toIdString = (value) => {
   return "";
 };
 
+const toCurrency = (amount) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(amount || 0));
+
 const getRecentActivityHref = (item = {}, status = "") => {
   const propertyId = toIdString(item.property);
   if (propertyId) {
@@ -36,12 +43,24 @@ const renderDashboard = (role, data) => {
   if (role === "Buyer") {
     metricCards.push(
       { label: "My Requests", value: data.myRequestsCount, href: "/pages/requests?section=pending" },
+      {
+        label: "Total Asset Value",
+        value: toCurrency(data.totalAssetsValue || 0),
+        href: "/pages/properties?view=mine",
+        metricClass: "metric-currency",
+      },
       { label: "Approved", value: data.approvedCount, href: "/pages/requests.html" },
       { label: "Pending", value: data.pendingCount, href: "/pages/requests?section=pending" }
     );
   } else if (role === "Seller") {
     metricCards.push(
       { label: "My Properties", value: data.myPropertiesCount, href: "/pages/properties?view=mine" },
+      {
+        label: "Total Asset Value",
+        value: toCurrency(data.totalAssetsValue || 0),
+        href: "/pages/properties?view=mine",
+        metricClass: "metric-currency",
+      },
       { label: "Total Requests", value: data.incomingRequestsCount, href: "/pages/requests.html" },
       { label: "Pending Decisions", value: data.pendingApprovals, href: "/pages/requests?section=pending" }
     );
@@ -54,14 +73,14 @@ const renderDashboard = (role, data) => {
   }
 
   dashboardRoot.innerHTML = `
-    <div class="grid grid-3">
+    <div class="grid ${metricCards.length > 3 ? "grid-4" : "grid-3"}">
       ${metricCards
         .map(
           (item) => `
             <a class="dashboard-card-link" href="${item.href}" aria-label="Open ${item.label}">
               <article class="card dashboard-metric-card">
                 <div>${item.label}</div>
-                <div class="metric">${item.value || 0}</div>
+                <div class="metric ${item.metricClass || ""}">${item.value || 0}</div>
               </article>
             </a>
           `

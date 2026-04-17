@@ -74,6 +74,52 @@ const actionButtons = (request, role) => {
   return buttons;
 };
 
+const finalStatusBadge = (status) => `<span class="badge ${String(status || "Pending").toLowerCase()}">${status || "Pending"}</span>`;
+
+const renderTimeline = (request) => {
+  const sellerStatus = request.sellerDecision?.status || "Pending";
+  const finalStatus = request.finalStatus || "Pending";
+
+  const steps = [
+    { label: "Request Sent", status: "completed" },
+    {
+      label: "Seller Review",
+      status:
+        sellerStatus === "Approved"
+          ? "completed"
+          : sellerStatus === "Rejected"
+            ? "rejected"
+            : "active",
+    },
+    {
+      label: "Gov Verification",
+      status:
+        finalStatus === "Approved"
+          ? "completed"
+          : finalStatus === "Rejected"
+            ? "rejected"
+            : sellerStatus === "Approved"
+              ? "active"
+              : "pending",
+    },
+  ];
+
+  return `
+    <div class="status-timeline">
+      ${steps
+        .map(
+          (step) => `
+            <div class="timeline-step ${step.status}">
+              <div class="step-icon">${step.status === "completed" ? "✓" : step.status === "rejected" ? "✕" : ""}</div>
+              <div class="step-label">${step.label}</div>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+};
+
 const bindRequestActions = () => {
   document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -136,13 +182,17 @@ const renderRequestList = (root, requests, role, emptyMessage) => {
     .map(
       (request) => `
         <article class="request-item" data-property-id="${request.property?._id || ""}">
-          <h3>${request.registrationId}</h3>
+          <div style="display:flex; justify-content:space-between; align-items:start; gap:0.5rem;">
+            <h3>${request.registrationId}</h3>
+            ${finalStatusBadge(request.finalStatus || "Pending")}
+          </div>
           <p><strong>Property:</strong> ${request.property?.title || "N/A"}</p>
           <p><strong>Buyer:</strong> ${request.buyer?.fullName || "N/A"}</p>
           <p><strong>Seller:</strong> ${request.seller?.fullName || "N/A"}</p>
-          <p>Seller: ${makeBadge(request.sellerDecision?.status || "Pending")}</p>
-          <p>Final: ${makeBadge(request.finalStatus || "Pending")}</p>
-          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem;">
+
+          ${renderTimeline(request)}
+
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
             ${actionButtons(request, role)}
           </div>
         </article>

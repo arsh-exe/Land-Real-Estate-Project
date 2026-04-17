@@ -38,3 +38,78 @@
   letter-spacing: 0.3px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
+
+/* Progress Timeline Container */
+.status-timeline {
+  display: flex;
+  justify-content: space-between;
+  margin: 1.2rem 0 0.8rem;
+  position: relative;
+  padding: 0 10px;
+}
+
+/* The connecting line */
+.status-timeline::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #dbe5f0;
+  z-index: 1;
+}
+
+.timeline-step {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  flex: 1;
+}
+
+/* The status circle */
+.step-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #dbe5f0;
+  margin: 0 auto 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.timeline-step.active .step-icon {
+  border-color: var(--gov-blue);
+  color: var(--gov-blue);
+  background: #eef2f7;
+}
+
+.timeline-step.completed .step-icon {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+
+.timeline-step.rejected .step-icon {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.step-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.timeline-step.active .step-label {
+  color: var(--gov-blue);
+}
+
+.timeline-step.completed .step-label {
+  color: var(--success);
+}

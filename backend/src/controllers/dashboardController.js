@@ -17,8 +17,18 @@ const getDashboardData = async (req, res, next) => {
       ]);
       const totalAssetsValue = assetStats.length > 0 ? assetStats[0].totalValue : 0;
 
-      const myRequests = await Registration.find({ buyer: _id }).sort({ createdAt: -1 }).limit(10);
-      const incomingRequests = await Registration.find({ seller: _id }).sort({ createdAt: -1 }).limit(10);
+      const myRequests = await Registration.find({ buyer: _id })
+        .populate("property", "title type location")
+        .populate("buyer", "fullName")
+        .populate("seller", "fullName")
+        .sort({ createdAt: -1 })
+        .limit(10);
+      const incomingRequests = await Registration.find({ seller: _id })
+        .populate("property", "title type location")
+        .populate("buyer", "fullName")
+        .populate("seller", "fullName")
+        .sort({ createdAt: -1 })
+        .limit(10);
 
       data = {
         myPropertiesCount,
@@ -28,7 +38,9 @@ const getDashboardData = async (req, res, next) => {
         approvedCount: await Registration.countDocuments({ buyer: _id, finalStatus: "Approved" }),
         pendingCount: await Registration.countDocuments({ buyer: _id, finalStatus: "Pending" }),
         totalAssetsValue,
-        myProperties: await Property.find({ owner: _id }).sort({ createdAt: -1 }).limit(10),
+        myProperties: await Property.find({ owner: _id })
+          .sort({ createdAt: -1 })
+          .limit(10),
         incomingRequests,
         myRequests,
       };
@@ -41,7 +53,13 @@ const getDashboardData = async (req, res, next) => {
           "sellerDecision.status": "Approved",
           finalStatus: "Pending",
         }),
-        recentTransactions: await Transaction.find().sort({ createdAt: -1 }).limit(12),
+        recentTransactions: await Transaction.find()
+          .populate("property", "title type location")
+          .populate("fromOwner", "fullName")
+          .populate("toOwner", "fullName")
+          .populate("registration", "registrationId finalStatus")
+          .sort({ createdAt: -1 })
+          .limit(12),
       };
     }
 

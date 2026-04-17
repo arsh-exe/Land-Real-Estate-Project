@@ -9,7 +9,7 @@ const getDashboardData = async (req, res, next) => {
 
     let data = {};
 
-    if (["User", "Buyer", "Seller"].includes(role)) {
+    if (role === "User") {
       const myPropertiesCount = await Property.countDocuments({ owner: _id });
       const assetStats = await Property.aggregate([
         { $match: { owner: _id } },

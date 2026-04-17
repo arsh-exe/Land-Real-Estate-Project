@@ -7,6 +7,13 @@ const createProperty = async (req, res, next) => {
   try {
     const { title, titleNumber, location, price, area, type } = req.body;
     const normalizedTitleNumber = String(titleNumber || "").trim();
+    const documentFiles = req.files?.documents || [];
+
+    if (!documentFiles.length) {
+      return res.status(400).json({ message: "At least one property document is required" });
+    }
+
+    const needsGovernmentApproval = req.user.role === "User";
 
     const property = await Property.create({
       propertyId: generateId("PROP"),
@@ -23,6 +30,15 @@ const createProperty = async (req, res, next) => {
           note: "Initial registration",
         },
       ],
+      approval: needsGovernmentApproval
+        ? { status: "Pending" }
+        : {
+            status: "Approved",
+            reviewedBy: req.user._id,
+            reviewedAt: new Date(),
+            note: "Auto-approved by system role",
+          },
+      isOpenForSale: false,
     });
 
     // Handle files from both 'images' and 'documents' fields
@@ -56,7 +72,12 @@ const createProperty = async (req, res, next) => {
       .populate("owner", "fullName email role")
       .populate("documents");
 
-    return res.status(201).json({ message: "Property created", property: populatedProperty });
+    return res.status(201).json({
+      message: needsGovernmentApproval
+        ? "Property submitted for government approval"
+        : "Property created",
+      property: populatedProperty,
+    });
   } catch (error) {
     next(error);
   }
@@ -69,6 +90,7 @@ const listProperties = async (req, res, next) => {
       type,
       minPrice,
       maxPrice,
+      onlyForSale,
       sortBy = "createdAt",
       order = "desc",
     } = req.query;
@@ -80,6 +102,47 @@ const listProperties = async (req, res, next) => {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);
       if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+    if (String(onlyForSale).toLowerCase() === "true") {
+      filter.isOpenForSale = true;
+    }
+    filter["approval.status"] = "Approved";
+
+    const sort = { [sortBy]: order === "asc" ? 1 : -1 };
+
+    const properties = await Property.find(filter)
+      .populate("owner", "fullName email role")
+      .populate("documents")
+      .sort(sort);
+
+    return res.status(200).json({ count: properties.length, properties });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const listAllProperties = async (req, res, next) => {
+  try {
+    const {
+      location,
+      type,
+      minPrice,
+      maxPrice,
+      onlyForSale,
+      sortBy = "createdAt",
+      order = "desc",
+    } = req.query;
+
+    const filter = {};
+    if (location) filter.location = { $regex: location, $options: "i" };
+    if (type) filter.type = type;
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+    if (String(onlyForSale).toLowerCase() === "true") {
+      filter.isOpenForSale = true;
     }
 
     const sort = { [sortBy]: order === "asc" ? 1 : -1 };
@@ -147,12 +210,13 @@ const updateProperty = async (req, res, next) => {
       return res.status(403).json({ message: "Forbidden" });
     }
 
-    const updates = (({ title, location, price, area, type }) => ({
+    const updates = (({ title, location, price, area, type, isOpenForSale }) => ({
       title,
       location,
       price,
       area,
       type,
+      isOpenForSale,
     }))(req.body);
 
     Object.keys(updates).forEach((key) => {
@@ -184,6 +248,16 @@ const updateProperty = async (req, res, next) => {
       );
 
       property.documents.push(...docs.map((doc) => doc._id));
+    }
+
+    if (ownerId === req.user._id.toString() && property.approval?.status === "Rejected") {
+      property.approval = {
+        status: "Pending",
+        reviewedBy: undefined,
+        reviewedAt: undefined,
+        note: "Resubmitted by owner after document/property update",
+      };
+      property.isOpenForSale = false;
     }
 
     await property.save();
@@ -241,7 +315,7 @@ const listCurrentlySellingProperties = async (req, res, next) => {
       "sellerDecision.status": { $in: ["Pending", "Approved"] },
     }).select("property");
 
-    const propertyIds = [
+    const activeTransferPropertyIds = [
       ...new Set(
         pendingRegistrations
           .map((registration) => registration?.property)
@@ -250,13 +324,13 @@ const listCurrentlySellingProperties = async (req, res, next) => {
       ),
     ];
 
-    if (!propertyIds.length) {
-      return res.status(200).json({ properties: [] });
-    }
-
     const properties = await Property.find({
-      _id: { $in: propertyIds },
       owner: req.user._id,
+      "approval.status": "Approved",
+      $or: [
+        { isOpenForSale: true },
+        { _id: { $in: activeTransferPropertyIds } },
+      ],
     })
       .populate("owner", "fullName email role")
       .populate("documents")
@@ -286,10 +360,12 @@ const listCurrentlySellingProperties = async (req, res, next) => {
     const requestCountMap = new Map(
       requestCounts.map((entry) => [String(entry._id), entry.pendingRequestsCount])
     );
+    const activeTransferIdSet = new Set(activeTransferPropertyIds);
 
     const data = properties.map((property) => ({
       ...property.toObject(),
       pendingRequestsCount: requestCountMap.get(String(property._id)) || 0,
+      hasActiveTransferRequest: activeTransferIdSet.has(String(property._id)),
     }));
 
     return res.status(200).json({ properties: data });
@@ -298,12 +374,97 @@ const listCurrentlySellingProperties = async (req, res, next) => {
   }
 };
 
+const setPropertySaleStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { isOpenForSale } = req.body;
+
+    if (typeof isOpenForSale !== "boolean") {
+      return res.status(400).json({ message: "isOpenForSale must be a boolean" });
+    }
+
+    const property = await Property.findById(id);
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    const ownerId = property.owner ? property.owner.toString() : null;
+    const canUpdate = ownerId === req.user._id.toString() || req.user.role === "Admin";
+    if (!canUpdate) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    if (property.approval?.status !== "Approved") {
+      return res.status(400).json({ message: "Property must be government-approved before selling" });
+    }
+
+    property.isOpenForSale = isOpenForSale;
+    await property.save();
+
+    return res.status(200).json({
+      message: isOpenForSale ? "Property marked as open for sale" : "Property removed from sale",
+      property,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const listPendingApprovalProperties = async (req, res, next) => {
+  try {
+    const properties = await Property.find({ "approval.status": "Pending" })
+      .populate("owner", "fullName email role")
+      .populate("documents")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({ properties });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const setPropertyApprovalStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status, note } = req.body;
+
+    const property = await Property.findById(id);
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    property.approval = {
+      status,
+      note,
+      reviewedBy: req.user._id,
+      reviewedAt: new Date(),
+    };
+
+    if (status !== "Approved") {
+      property.isOpenForSale = false;
+    }
+
+    await property.save();
+
+    return res.status(200).json({
+      message: `Property ${status.toLowerCase()} by government review`,
+      property,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createProperty,
   listProperties,
+  listAllProperties,
   getPropertyById,
   updateProperty,
   deleteProperty,
   listMyProperties,
   listCurrentlySellingProperties,
+  setPropertySaleStatus,
+  listPendingApprovalProperties,
+  setPropertyApprovalStatus,
 };

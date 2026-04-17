@@ -7,7 +7,7 @@ const menuByRole = {
   user: [
     { label: "Dashboard", href: "/pages/dashboard.html" },
     { label: "Add Property", href: "/pages/properties?view=add" },
-    { label: "Search Properties", href: "/pages/properties.html" },
+    { label: "Buy", href: "/pages/properties.html" },
     { label: "My Properties", href: "/pages/properties?view=mine" },
     { label: "Currently Selling", href: "/pages/properties?view=selling" },
     { label: "Requests", href: "/pages/requests.html" },
@@ -16,7 +16,7 @@ const menuByRole = {
   buyer: [
     { label: "Dashboard", href: "/pages/dashboard.html" },
     { label: "Add Property", href: "/pages/properties?view=add" },
-    { label: "Search Properties", href: "/pages/properties.html" },
+    { label: "Buy", href: "/pages/properties.html" },
     { label: "My Properties", href: "/pages/properties?view=mine" },
     { label: "Currently Selling", href: "/pages/properties?view=selling" },
     { label: "Requests", href: "/pages/requests.html" },
@@ -25,7 +25,7 @@ const menuByRole = {
   seller: [
     { label: "Dashboard", href: "/pages/dashboard.html" },
     { label: "Add Property", href: "/pages/properties?view=add" },
-    { label: "Search Properties", href: "/pages/properties.html" },
+    { label: "Buy", href: "/pages/properties.html" },
     { label: "My Properties", href: "/pages/properties?view=mine" },
     { label: "Currently Selling", href: "/pages/properties?view=selling" },
     { label: "Requests", href: "/pages/requests.html" },

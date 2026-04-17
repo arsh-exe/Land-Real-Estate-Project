@@ -125,6 +125,7 @@ const officerDecision = async (req, res, next) => {
       const property = registration.property;
       const oldOwner = property.owner;
       property.owner = registration.buyer._id;
+      property.isOpenForSale = false;
       property.ownershipHistory.push({
         owner: registration.buyer._id,
         note: "Transferred after officer approval",
@@ -164,14 +165,6 @@ const listRequests = async (req, res, next) => {
 
     if (req.user.role === "User") {
       filter.$or = [{ buyer: req.user._id }, { seller: req.user._id }];
-    }
-
-    if (req.user.role === "Buyer") {
-      filter.buyer = req.user._id;
-    }
-
-    if (req.user.role === "Seller") {
-      filter.seller = req.user._id;
     }
 
     const registrations = await Registration.find(filter)

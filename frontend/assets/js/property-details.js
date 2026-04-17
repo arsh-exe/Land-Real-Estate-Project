@@ -96,6 +96,30 @@ const bindHeroGallery = () => {
   const lightboxImage = lightbox?.querySelector(".pd-lightbox-image");
   const closeBtn = lightbox?.querySelector("[data-lightbox-close]");
   let autoplayTimer = null;
+  let isHovered = false;
+
+  const stopAutoplay = () => {
+    if (!autoplayTimer) return;
+    window.clearInterval(autoplayTimer);
+    autoplayTimer = null;
+  };
+
+  const startAutoplay = () => {
+    if (autoplayTimer || imageUrls.length < 2) return;
+
+    autoplayTimer = window.setInterval(() => {
+      if (!container.isConnected) {
+        stopAutoplay();
+        return;
+      }
+
+      if (isHovered) {
+        return;
+      }
+
+      moveHeroCarousel(container, imageUrls, 1);
+    }, DETAILS_CAROUSEL_INTERVAL_MS);
+  };
 
   const getCurrentImageSrc = () => {
     if (!imageUrls.length) return "";
@@ -121,28 +145,22 @@ const bindHeroGallery = () => {
     document.body.style.overflow = "";
   };
 
-  if (imageUrls.length >= 2) {
-    heroStage?.addEventListener("click", (event) => {
-      const rect = heroStage.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const direction = x < rect.width / 2 ? -1 : 1;
-      moveHeroCarousel(container, imageUrls, direction);
-    });
-  }
-
-  // Amazon-like: direct image interaction without a separate enlarge button.
+  // Keep only double-click zoom on hero image. Single-click left/right slide navigation is disabled.
   heroStage?.addEventListener("dblclick", (event) => {
     event.preventDefault();
     event.stopPropagation();
     openLightbox();
   });
 
-  // For single-image properties, one click opens full view.
-  if (imageUrls.length < 2) {
-    heroStage?.addEventListener("click", () => {
-      openLightbox();
-    });
-  }
+  heroStage?.addEventListener("mouseenter", () => {
+    isHovered = true;
+    stopAutoplay();
+  });
+
+  heroStage?.addEventListener("mouseleave", () => {
+    isHovered = false;
+    startAutoplay();
+  });
 
   container.querySelectorAll(".pd-thumb").forEach((thumb) => {
     thumb.addEventListener("click", () => {
@@ -151,19 +169,7 @@ const bindHeroGallery = () => {
     });
   });
 
-  if (imageUrls.length >= 2) {
-    autoplayTimer = window.setInterval(() => {
-      if (!container.isConnected) {
-        if (autoplayTimer) {
-          window.clearInterval(autoplayTimer);
-          autoplayTimer = null;
-        }
-        return;
-      }
-
-      moveHeroCarousel(container, imageUrls, 1);
-    }, DETAILS_CAROUSEL_INTERVAL_MS);
-  }
+  startAutoplay();
 
   closeBtn?.addEventListener("click", closeLightbox);
 

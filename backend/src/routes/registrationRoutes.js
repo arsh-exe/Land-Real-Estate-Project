@@ -11,12 +11,12 @@ const validate = require("../middleware/validate");
 
 const router = express.Router();
 
-router.get("/", protect, listRequests);
+router.get("/", protect, authorize("User", "Admin", "Government Officer"), listRequests);
 
 router.post(
   "/",
   protect,
-  authorize("User", "Buyer"),
+  authorize("User"),
   [body("propertyId").isMongoId().withMessage("Valid property id is required")],
   validate,
   createRequest
@@ -25,7 +25,7 @@ router.post(
 router.patch(
   "/:id/seller-decision",
   protect,
-  authorize("User", "Seller"),
+  authorize("User"),
   [
     body("status").isIn(["Approved", "Rejected"]).withMessage("Status must be Approved or Rejected"),
     body("note").optional().trim().isLength({ max: 500 }),

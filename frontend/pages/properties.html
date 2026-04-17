@@ -34,7 +34,7 @@
       </section>
 
       <section id="add-property-block" class="card hidden mt-1">
-        <h3>Add Property</h3>
+        <h3 id="property-form-title">Add Property</h3>
         <form id="add-property-form" enctype="multipart/form-data">
           <div class="form-row">
             <input class="input" name="title" placeholder="Title" required />
@@ -55,13 +55,18 @@
             <div>
               <label for="property-images">Upload Property Images</label>
               <input class="input" id="property-images" name="images" type="file" multiple accept="image/*" />
+              <div id="property-images-selected" class="file-chip-list mt-06"></div>
             </div>
             <div>
               <label for="documents">Property Documents</label>
-              <input class="input" id="documents" name="documents" type="file" multiple />
+              <input class="input" id="documents" name="documents" type="file" multiple required />
+              <div id="property-documents-selected" class="file-chip-list mt-06"></div>
             </div>
           </div>
-          <button class="btn btn-primary mt-1" type="submit">Save Property</button>
+          <div class="action-row mt-1">
+            <button id="property-form-submit" class="btn btn-primary" type="submit">Save Property</button>
+            <button id="property-form-cancel" class="btn btn-outline hidden" type="button">Cancel</button>
+          </div>
           <p id="property-form-message" class="mt-06"></p>
         </form>
       </section>
@@ -73,6 +78,49 @@
     </main>
 
     <footer class="footer">Property records and submission workflows</footer>
+
+    <div id="sell-modal" class="modal-overlay hidden" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="sell-modal-title">
+        <div class="modal-header">
+          <h3 id="sell-modal-title">Want to Sell: Update Property Details</h3>
+          <button id="sell-modal-close" class="btn btn-outline btn-sm" type="button" aria-label="Close">Close</button>
+        </div>
+        <form id="sell-property-form" enctype="multipart/form-data">
+          <div class="form-row">
+            <input id="sell-title" class="input" name="title" placeholder="Title" required />
+            <input id="sell-location" class="input" name="location" placeholder="Location" required />
+            <select id="sell-type" name="type" required title="Property type" aria-label="Property type">
+              <option value="Residential">Residential</option>
+              <option value="Commercial">Commercial</option>
+              <option value="Agricultural">Agricultural</option>
+              <option value="Industrial">Industrial</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-row mt-08">
+            <input id="sell-price" class="input" name="price" type="number" placeholder="Price" required />
+            <input id="sell-area" class="input" name="area" type="number" placeholder="Area (sq.ft)" required />
+          </div>
+          <div class="form-row mt-08">
+            <div>
+              <label for="sell-images">Upload New Property Images (optional)</label>
+              <input id="sell-images" class="input" name="images" type="file" multiple accept="image/*" />
+              <div id="sell-images-selected" class="file-chip-list mt-06"></div>
+            </div>
+            <div>
+              <label for="sell-documents">Upload New Property Documents (optional)</label>
+              <input id="sell-documents" class="input" name="documents" type="file" multiple />
+              <div id="sell-documents-selected" class="file-chip-list mt-06"></div>
+            </div>
+          </div>
+          <div class="action-row mt-1">
+            <button class="btn btn-primary" type="submit">Save & Open For Sale</button>
+            <button id="sell-modal-cancel" class="btn btn-outline" type="button">Cancel</button>
+          </div>
+          <p id="sell-form-message" class="mt-06"></p>
+        </form>
+      </div>
+    </div>
 
     <script src="/assets/js/api.js"></script>
     <script src="/assets/js/navbar.js?v=20260416d"></script>

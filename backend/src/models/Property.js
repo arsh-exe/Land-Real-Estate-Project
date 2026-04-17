@@ -55,6 +55,28 @@ const propertySchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
+    approval: {
+      status: {
+        type: String,
+        enum: ["Pending", "Approved", "Rejected"],
+        default: "Pending",
+      },
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      reviewedAt: {
+        type: Date,
+      },
+      note: {
+        type: String,
+        trim: true,
+      },
+    },
+    isOpenForSale: {
+      type: Boolean,
+      default: false,
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

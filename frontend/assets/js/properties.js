@@ -1,7 +1,197 @@
 const propertyList = document.getElementById("property-list");
 const propertyFilterForm = document.getElementById("property-filter-form");
 const addPropertyForm = document.getElementById("add-property-form");
+const propertyFormTitle = document.getElementById("property-form-title");
+const propertyFormSubmit = document.getElementById("property-form-submit");
+const propertyFormCancel = document.getElementById("property-form-cancel");
+const sellModal = document.getElementById("sell-modal");
+const sellModalClose = document.getElementById("sell-modal-close");
+const sellModalCancel = document.getElementById("sell-modal-cancel");
+const sellPropertyForm = document.getElementById("sell-property-form");
+const sellFormMessage = document.getElementById("sell-form-message");
+const propertyImagesInput = document.getElementById("property-images");
+const propertyDocumentsInput = document.getElementById("documents");
+const sellImagesInput = document.getElementById("sell-images");
+const sellDocumentsInput = document.getElementById("sell-documents");
+const clearPropertyImagesBtn = document.getElementById("clear-property-images");
+const clearPropertyDocumentsBtn = document.getElementById("clear-property-documents");
+const clearSellImagesBtn = document.getElementById("clear-sell-images");
+const clearSellDocumentsBtn = document.getElementById("clear-sell-documents");
+const propertyImagesSelected = document.getElementById("property-images-selected");
+const propertyDocumentsSelected = document.getElementById("property-documents-selected");
+const sellImagesSelected = document.getElementById("sell-images-selected");
+const sellDocumentsSelected = document.getElementById("sell-documents-selected");
 const CAROUSEL_INTERVAL_MS = 2000;
+
+let propertyFormMode = "create";
+let editingPropertyId = null;
+let shouldOpenForSaleAfterModalSave = true;
+
+const createFileChipManager = (inputEl, listEl, emptyText) => {
+  if (!inputEl || !listEl) {
+    return {
+      clear: () => {},
+    };
+  }
+
+  let selectedFiles = [];
+  const fileKey = (file) => `${file.name}__${file.size}__${file.lastModified}`;
+
+  const syncInputFiles = () => {
+    const transfer = new DataTransfer();
+    selectedFiles.forEach((file) => transfer.items.add(file));
+    inputEl.files = transfer.files;
+  };
+
+  const render = () => {
+    if (!selectedFiles.length) {
+      listEl.innerHTML = `<span class="file-chip-empty">${emptyText}</span>`;
+      return;
+    }
+
+    listEl.innerHTML = selectedFiles
+      .map(
+        (file, index) => `
+          <span class="file-chip">
+            <span>${file.name}</span>
+            <button type="button" class="file-chip-remove" data-remove-index="${index}" aria-label="Remove ${file.name}">x</button>
+          </span>
+        `
+      )
+      .join("");
+  };
+
+  inputEl.addEventListener("change", () => {
+    const incomingFiles = Array.from(inputEl.files || []);
+    if (!incomingFiles.length) {
+      render();
+      return;
+    }
+
+    const existingKeys = new Set(selectedFiles.map(fileKey));
+    incomingFiles.forEach((file) => {
+      const key = fileKey(file);
+      if (!existingKeys.has(key)) {
+        selectedFiles.push(file);
+        existingKeys.add(key);
+      }
+    });
+
+    syncInputFiles();
+    render();
+  });
+
+  listEl.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-index]");
+    if (!removeButton) return;
+
+    const index = Number(removeButton.dataset.removeIndex);
+    if (Number.isNaN(index) || index < 0 || index >= selectedFiles.length) return;
+
+    selectedFiles.splice(index, 1);
+    syncInputFiles();
+    render();
+  });
+
+  const clear = () => {
+    selectedFiles = [];
+    syncInputFiles();
+    render();
+  };
+
+  render();
+
+  return {
+    clear,
+  };
+};
+
+const propertyImagesManager = createFileChipManager(
+  propertyImagesInput,
+  propertyImagesSelected,
+  "No images selected"
+);
+const propertyDocumentsManager = createFileChipManager(
+  propertyDocumentsInput,
+  propertyDocumentsSelected,
+  "No documents selected"
+);
+const sellImagesManager = createFileChipManager(
+  sellImagesInput,
+  sellImagesSelected,
+  "No images selected"
+);
+const sellDocumentsManager = createFileChipManager(
+  sellDocumentsInput,
+  sellDocumentsSelected,
+  "No documents selected"
+);
+
+const resetPropertyFormMode = () => {
+  propertyFormMode = "create";
+  editingPropertyId = null;
+  if (propertyFormTitle) propertyFormTitle.textContent = "Add Property";
+  if (propertyFormSubmit) propertyFormSubmit.textContent = "Save Property";
+  propertyFormCancel?.classList.add("hidden");
+};
+
+const openSellEditor = (propertyId, prefill, options = {}) => {
+  if (!sellModal || !sellPropertyForm) return;
+
+  const {
+    shouldOpenForSale = true,
+    title = "Want to Sell: Update Property Details",
+    hint = "Update property details and upload new images/documents if needed.",
+  } = options;
+
+  propertyFormMode = "sell-edit";
+  editingPropertyId = propertyId;
+  shouldOpenForSaleAfterModalSave = shouldOpenForSale;
+
+  const modalTitle = document.getElementById("sell-modal-title");
+  const submitButton = sellPropertyForm.querySelector('button[type="submit"]');
+  if (modalTitle) modalTitle.textContent = title;
+  if (submitButton) {
+    submitButton.textContent = shouldOpenForSale ? "Save & Open For Sale" : "Save Property Updates";
+  }
+
+  const titleInput = document.getElementById("sell-title");
+  const locationInput = document.getElementById("sell-location");
+  const typeInput = document.getElementById("sell-type");
+  const priceInput = document.getElementById("sell-price");
+  const areaInput = document.getElementById("sell-area");
+  const imagesInput = document.getElementById("sell-images");
+  const documentsInput = document.getElementById("sell-documents");
+
+  if (titleInput) titleInput.value = prefill?.title || "";
+  if (locationInput) locationInput.value = prefill?.location || "";
+  if (typeInput) typeInput.value = prefill?.type || "Residential";
+  if (priceInput) priceInput.value = prefill?.price ?? "";
+  if (areaInput) areaInput.value = prefill?.area ?? "";
+  sellImagesManager.clear();
+  sellDocumentsManager.clear();
+
+  if (sellFormMessage) {
+    sellFormMessage.textContent = hint;
+    sellFormMessage.style.color = "#344054";
+  }
+
+  sellModal.classList.remove("hidden");
+  sellModal.setAttribute("aria-hidden", "false");
+};
+
+const closeSellModal = () => {
+  if (!sellModal) return;
+  sellModal.classList.add("hidden");
+  sellModal.setAttribute("aria-hidden", "true");
+  sellPropertyForm?.reset();
+  sellImagesManager.clear();
+  sellDocumentsManager.clear();
+  if (sellFormMessage) sellFormMessage.textContent = "";
+  editingPropertyId = null;
+  propertyFormMode = "create";
+  shouldOpenForSaleAfterModalSave = true;
+};
 
 const parsePropertiesPageMode = () => {
   const user = getUser();
@@ -66,7 +256,7 @@ const updatePropertiesPageLayout = () => {
 
   if (mode === "selling") {
     if (titleEl) titleEl.textContent = "Currently Selling";
-    if (subtitleEl) subtitleEl.textContent = "Properties you currently have in active transfer requests.";
+    if (subtitleEl) subtitleEl.textContent = "Properties marked open for sale and those in active transfer requests.";
     filterBlock?.classList.add("hidden");
     addBlock?.classList.add("hidden");
     listingBlock?.classList.remove("hidden");
@@ -286,15 +476,45 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
         const ownerId = property?.owner?._id || property?.owner?.id || property?.owner;
         const isOwner = Boolean(currentUserId) && String(ownerId) === String(currentUserId);
         const isAdmin = currentRole === "admin";
+        const approvalStatus = String(property?.approval?.status || "Approved");
+        const approvalClass =
+          approvalStatus.toLowerCase() === "approved"
+            ? "available"
+            : approvalStatus.toLowerCase() === "rejected"
+            ? "sold"
+            : "pending";
         const imageDocs = getImageDocuments(property).filter((doc) => Boolean(doc?.filePath));
         const imageUrls = imageDocs.map((doc) => `${SERVER_URL}${doc.filePath}`);
         const hasImage = imageUrls.length > 0;
         const encodedImages = encodeURIComponent(JSON.stringify(imageUrls));
         const status = propertyStatusMap.get(String(property._id)) || "available";
         const statusClass = getPropertyStatusClass(status);
+        const sellEditPayload = encodeURIComponent(
+          JSON.stringify({
+            title: property.title,
+            location: property.location,
+            type: property.type,
+            price: property.price,
+            area: property.area,
+          })
+        );
         const actionButtons = `
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
             <a href="/pages/property-details?id=${property._id}" class="btn btn-outline btn-sm">View Details</a>
+            ${
+              pageMode === "mine" && isOwner && currentRole === "user"
+                ? approvalStatus === "Approved"
+                  ? `<button class="btn btn-primary btn-sm" data-sell-edit="${property._id}" data-sell-payload="${sellEditPayload}">${
+                      property.isOpenForSale ? "Update Sale Details" : "Want to Sell"
+                    }</button>
+                     ${
+                       property.isOpenForSale
+                         ? `<button class="btn btn-outline btn-sm" data-sale-stop="${property._id}">Stop Selling</button>`
+                         : ""
+                     }`
+                  : `<button class="btn btn-secondary btn-sm" data-doc-edit="${property._id}" data-sell-payload="${sellEditPayload}">Update Documents</button>`
+                : ""
+            }
             ${
               currentRole === "user" && !isOwner
                 ? `<button class="btn btn-primary btn-sm" data-request="${property._id}">Request Registration</button>`
@@ -335,6 +555,14 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
         </div>
         <h3>${property.title}</h3>
         ${pageMode === "mine" && status === "sold" ? "" : `<p><span class="badge ${statusClass}">${status}</span></p>`}
+        <p><span class="badge ${approvalClass}">approval: ${approvalStatus.toLowerCase()}</span></p>
+        ${
+          pageMode === "mine"
+            ? `<p><span class="badge ${property.isOpenForSale ? "available" : "pending"}">${
+                property.isOpenForSale ? "open for sale" : "not for sale"
+              }</span></p>`
+            : ""
+        }
         <p>${property.location} • ${property.type}</p>
         <p><strong>${toCurrency(property.price)}</strong> • ${property.area ?? "Area not specified"}${
         property.area !== null && property.area !== undefined ? " sq.ft" : ""
@@ -374,6 +602,53 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
         alert("Request submitted successfully");
       } catch (error) {
         alert(error.message);
+      }
+    });
+  });
+
+  propertyList.querySelectorAll("[data-sell-edit]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        const prefill = JSON.parse(decodeURIComponent(button.dataset.sellPayload || "%7B%7D"));
+        openSellEditor(button.dataset.sellEdit, prefill, {
+          shouldOpenForSale: true,
+          title: "Want to Sell: Update Property Details",
+          hint: "Update property details and upload new images/documents if needed.",
+        });
+      } catch (_error) {
+        showToast("Unable to open sell editor for this property", "error");
+      }
+    });
+  });
+
+  propertyList.querySelectorAll("[data-doc-edit]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        const prefill = JSON.parse(decodeURIComponent(button.dataset.sellPayload || "%7B%7D"));
+        openSellEditor(button.dataset.docEdit, prefill, {
+          shouldOpenForSale: false,
+          title: "Update Property Documents For Approval",
+          hint: "Government approval is pending/rejected. Update details and documents, then save to continue review.",
+        });
+      } catch (_error) {
+        showToast("Unable to open sell editor for this property", "error");
+      }
+    });
+  });
+
+  propertyList.querySelectorAll("[data-sale-stop]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (!confirm("Stop selling this property?")) return;
+
+      try {
+        await apiRequest(`/properties/${button.dataset.saleStop}/sale-status`, {
+          method: "PATCH",
+          body: JSON.stringify({ isOpenForSale: false }),
+        });
+        showToast("Property removed from sale", "success");
+        await loadProperties();
+      } catch (error) {
+        showToast(error.message, "error");
       }
     });
   });
@@ -461,11 +736,19 @@ const loadProperties = async (query = "") => {
     const mode = parsePropertiesPageMode();
     const shouldLoadMine = ["user", "seller", "buyer"].includes(role) && mode === "mine";
     const shouldLoadSelling = ["user", "seller", "buyer"].includes(role) && mode === "selling";
-    const endpoint = shouldLoadSelling
+    const shouldLoadAllForReview = ["admin", "government officer"].includes(role) && !shouldLoadMine && !shouldLoadSelling;
+    let endpoint = shouldLoadAllForReview
+      ? `/properties/all${query ? `?${query}` : ""}`
+      : shouldLoadSelling
       ? "/properties/selling/current"
       : shouldLoadMine
       ? "/properties/my"
       : `/properties${query ? `?${query}` : ""}`;
+
+    if (!shouldLoadMine && !shouldLoadSelling && ["user", "buyer", "seller"].includes(role)) {
+      const separator = endpoint.includes("?") ? "&" : "?";
+      endpoint = `${endpoint}${separator}onlyForSale=true`;
+    }
     const [propertyData, registrationData] = await Promise.all([
       apiRequest(endpoint),
       apiRequest("/registrations").catch(() => ({ registrations: [] })),
@@ -498,7 +781,9 @@ addPropertyForm?.addEventListener("submit", async (event) => {
     });
 
     addPropertyForm.reset();
-    output.textContent = "Property added successfully";
+    propertyImagesManager.clear();
+    propertyDocumentsManager.clear();
+    output.textContent = "Property submitted and awaiting government approval";
     output.style.color = "#067647";
     // Send sellers/admins to a listing view after creation so they can verify the new record.
     const role = roleKey(getUser()?.role);
@@ -515,6 +800,90 @@ addPropertyForm?.addEventListener("submit", async (event) => {
   } catch (error) {
     output.textContent = error.message;
     output.style.color = "#b42318";
+  }
+});
+
+sellPropertyForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!editingPropertyId) {
+    showToast("Select a property before updating sale details", "error");
+    return;
+  }
+
+  try {
+    const formData = new FormData(sellPropertyForm);
+    await apiRequest(`/properties/${editingPropertyId}`, {
+      method: "PUT",
+      body: formData,
+    });
+
+    if (shouldOpenForSaleAfterModalSave) {
+      await apiRequest(`/properties/${editingPropertyId}/sale-status`, {
+        method: "PATCH",
+        body: JSON.stringify({ isOpenForSale: true }),
+      });
+      showToast("Property updated and listed for sale", "success");
+    } else {
+      showToast("Property details/documents updated", "success");
+    }
+
+    closeSellModal();
+    await loadProperties();
+  } catch (error) {
+    if (sellFormMessage) {
+      sellFormMessage.textContent = error.message;
+      sellFormMessage.style.color = "#b42318";
+    }
+    showToast(error.message, "error");
+  }
+});
+
+propertyFormCancel?.addEventListener("click", () => {
+  const addBlock = document.getElementById("add-property-block");
+  const mode = parsePropertiesPageMode();
+  const output = document.getElementById("property-form-message");
+
+  addPropertyForm?.reset();
+  propertyImagesManager.clear();
+  propertyDocumentsManager.clear();
+  resetPropertyFormMode();
+
+  if (output) {
+    output.textContent = "";
+  }
+
+  if (mode === "mine" || mode === "selling") {
+    addBlock?.classList.add("hidden");
+  }
+});
+
+sellModalClose?.addEventListener("click", closeSellModal);
+sellModalCancel?.addEventListener("click", closeSellModal);
+clearPropertyImagesBtn?.addEventListener("click", () => {
+  propertyImagesManager.clear();
+  showToast("Selected images removed", "info");
+});
+clearPropertyDocumentsBtn?.addEventListener("click", () => {
+  propertyDocumentsManager.clear();
+  showToast("Selected documents removed", "info");
+});
+clearSellImagesBtn?.addEventListener("click", () => {
+  sellImagesManager.clear();
+  showToast("Selected images removed", "info");
+});
+clearSellDocumentsBtn?.addEventListener("click", () => {
+  sellDocumentsManager.clear();
+  showToast("Selected documents removed", "info");
+});
+sellModal?.addEventListener("click", (event) => {
+  if (event.target === sellModal) {
+    closeSellModal();
+  }
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && sellModal && !sellModal.classList.contains("hidden")) {
+    closeSellModal();
   }
 });
 

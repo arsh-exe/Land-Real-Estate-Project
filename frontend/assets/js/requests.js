@@ -2,14 +2,17 @@ const pendingRequestsRoot = document.getElementById("requests-pending-root");
 const approvedRequestsRoot = document.getElementById("requests-approved-root");
 const rejectedRequestsRoot = document.getElementById("requests-rejected-root");
 const transactionsRoot = document.getElementById("transactions-root");
+const propertyApprovalsRoot = document.getElementById("property-approvals-root");
 let transactionSwiper = null;
 
 const openRequestedSection = () => {
   const params = new URLSearchParams(window.location.search);
   const section = String(params.get("section") || "").trim().toLowerCase();
-  if (!section) return;
+  const verifyMode = String(params.get("verify") || "").trim() === "1";
+  if (!section && !verifyMode) return;
 
   const sections = {
+    "property-approvals": document.getElementById("section-property-approvals"),
     pending: document.getElementById("section-pending"),
     approved: document.getElementById("section-approved"),
     rejected: document.getElementById("section-rejected"),
@@ -17,10 +20,105 @@ const openRequestedSection = () => {
   };
 
   const activeSection = sections[section];
-  if (!activeSection) return;
+  if (activeSection) {
+    activeSection.open = true;
+    activeSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
-  activeSection.open = true;
-  activeSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (verifyMode) {
+    const approvalSection = document.getElementById("section-property-approvals");
+    if (approvalSection) {
+      approvalSection.open = true;
+      approvalSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+};
+
+const bindPropertyApprovalActions = () => {
+  document.querySelectorAll("[data-property-approval-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const status = button.dataset.propertyApprovalAction;
+      const id = button.dataset.propertyApprovalId;
+      const note = prompt("Optional review note:") || "";
+
+      try {
+        await apiRequest(`/properties/${id}/approval`, {
+          method: "PATCH",
+          body: JSON.stringify({ status, note }),
+        });
+        showToast(`Property ${status.toLowerCase()} successfully`, "success");
+        await loadPropertyApprovals();
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    });
+  });
+};
+
+const renderPropertyApprovalList = (properties = []) => {
+  if (!propertyApprovalsRoot) return;
+
+  if (!properties.length) {
+    propertyApprovalsRoot.innerHTML = "<p>No pending property approvals.</p>";
+    return;
+  }
+
+  propertyApprovalsRoot.innerHTML = properties
+    .map(
+      (property) => `
+        <article class="request-item" data-property-id="${property._id}">
+          <div style="display:flex; justify-content:space-between; align-items:start; gap:0.5rem;">
+            <h3 style="margin:0;">${property.title || "Untitled property"}</h3>
+            <span class="badge pending">Pending</span>
+          </div>
+          <div style="margin: 1rem 0;">
+            <p><strong>Owner:</strong> ${property.owner?.fullName || "N/A"}</p>
+            <p><strong>Location:</strong> ${property.location || "N/A"}</p>
+            <p><strong>Type:</strong> ${property.type || "N/A"}</p>
+            <p><strong>Price:</strong> ₹${Number(property.price || 0).toLocaleString("en-IN")}</p>
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
+            <a href="/pages/property-details?id=${property._id}" class="btn btn-outline">View Details</a>
+            <button class="btn btn-primary" data-property-approval-action="Approved" data-property-approval-id="${property._id}">Approve Property</button>
+            <button class="btn btn-danger" data-property-approval-action="Rejected" data-property-approval-id="${property._id}">Reject Property</button>
+          </div>
+        </article>
+      `
+    )
+    .join("");
+
+  bindPropertyApprovalActions();
+  bindRequestCardNavigation();
+};
+
+const loadPropertyApprovals = async () => {
+  const section = document.getElementById("section-property-approvals");
+  const role = roleKey(getUser()?.role);
+  const canVerifyProperties = ["admin", "government officer"].includes(role);
+
+  if (!canVerifyProperties) {
+    section?.classList.add("hidden");
+    return;
+  }
+
+  section?.classList.remove("hidden");
+  if (!propertyApprovalsRoot) return;
+
+  propertyApprovalsRoot.innerHTML = `
+    <article class="request-item skeleton" style="border: none; box-shadow: none;">
+      <div class="skeleton-title"></div>
+      <div class="skeleton-text"></div>
+      <div class="skeleton-text short"></div>
+    </article>
+  `;
+
+  try {
+    const { properties } = await apiRequest("/properties/pending-approvals");
+    renderPropertyApprovalList(properties || []);
+  } catch (error) {
+    propertyApprovalsRoot.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
+    showToast(error.message, "error");
+  }
 };
 
 const bindCollapsibleCards = () => {
@@ -42,10 +140,14 @@ const bindCollapsibleCards = () => {
 
 const makeBadge = (status) => `<span class="badge ${String(status).toLowerCase()}">${status}</span>`;
 
-const actionButtons = (request, role) => {
+const actionButtons = (request, role, currentUserId) => {
   let buttons = "";
 
-  if (["user", "seller"].includes(role) && request.sellerDecision?.status === "Pending") {
+  // Verify the current user is the seller for this specific request.
+  const sellerId = request.seller?._id || request.seller;
+  const isSeller = String(sellerId) === String(currentUserId);
+
+  if (["user", "seller"].includes(role) && isSeller && request.sellerDecision?.status === "Pending") {
     buttons += `
       <button class="btn btn-primary" data-action="seller" data-status="Approved" data-id="${request._id}">Approve</button>
       <button class="btn btn-danger" data-action="seller" data-status="Rejected" data-id="${request._id}">Reject</button>
@@ -223,26 +325,43 @@ const initTransactionSwiper = () => {
 const renderRequestList = (root, requests, role, emptyMessage) => {
   if (!root) return;
 
+  const currentUser = getUser();
+  const currentUserId = currentUser?._id || currentUser?.id;
+
   root.innerHTML = (requests || [])
-    .map(
-      (request) => `
+    .map((request) => {
+      const sellerId = request.seller?._id || request.seller;
+      const isSeller = String(sellerId) === String(currentUserId);
+      const roleBadge = role === "user"
+        ? isSeller
+          ? '<span class="badge" style="background:#fff3cd;color:#856404;border:1px solid #ffeeba;">Selling</span>'
+          : '<span class="badge" style="background:#d1ecf1;color:#0c5460;border:1px solid #bee5eb;">Buying</span>'
+        : "";
+
+      return `
         <article class="request-item" data-property-id="${request.property?._id || ""}">
           <div style="display:flex; justify-content:space-between; align-items:start; gap:0.5rem;">
-            <h3>${request.registrationId}</h3>
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+              <h3 style="margin:0;">${request.registrationId}</h3>
+              ${roleBadge}
+            </div>
             ${finalStatusBadge(request.finalStatus || "Pending")}
           </div>
-          <p><strong>Property:</strong> ${request.property?.title || "N/A"}</p>
-          <p><strong>Buyer:</strong> ${request.buyer?.fullName || "N/A"}</p>
-          <p><strong>Seller:</strong> ${request.seller?.fullName || "N/A"}</p>
+
+          <div style="margin: 1rem 0;">
+            <p><strong>Property:</strong> ${request.property?.title || "N/A"}</p>
+            <p><strong>Buyer:</strong> ${request.buyer?.fullName || "N/A"}</p>
+            <p><strong>Seller:</strong> ${request.seller?.fullName || "N/A"}</p>
+          </div>
 
           ${renderTimeline(request)}
 
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
-            ${actionButtons(request, role)}
+            ${actionButtons(request, role, currentUserId)}
           </div>
         </article>
-      `
-    )
+      `;
+    })
     .join("");
 
   if (!requests.length) {
@@ -367,6 +486,7 @@ const loadTransactions = async () => {
 window.addEventListener("DOMContentLoaded", () => {
   bindCollapsibleCards();
   openRequestedSection();
+  loadPropertyApprovals();
   loadRequests();
   loadTransactions();
 });

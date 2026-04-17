@@ -146,11 +146,6 @@ const setCarouselFrame = (carousel, nextIndex) => {
     imageEl.classList.remove("is-fading");
   };
   preload.src = nextSrc;
-
-  const countEl = carousel.querySelector("[data-carousel-count]");
-  if (countEl) {
-    countEl.textContent = `${safeIndex + 1}/${images.length}`;
-  }
 };
 
 const moveCarousel = (carousel, direction) => {
@@ -201,19 +196,12 @@ const renderProperties = (properties = []) => {
 
         return `
       <article class="property-item">
-        <div class="property-media ${hasImage ? "property-carousel" : ""}" ${
+        <div class="property-media ${hasImage ? "property-carousel" : ""}" style="cursor:pointer;" ${
           hasImage ? `data-images="${encodedImages}" data-index="0"` : ""
         }>
           ${
             hasImage
-              ? `<img class="property-image" src="${imageUrls[0]}" alt="${property.title} image" loading="lazy" onError="this.parentElement.innerHTML='<div class=\\'property-image-placeholder\\'>Image failed to load</div>'" />
-                 ${
-                   imageUrls.length > 1
-                     ? `<button type="button" class="property-media-nav prev" data-carousel-action="prev" aria-label="Previous image">&#8249;</button>
-                        <button type="button" class="property-media-nav next" data-carousel-action="next" aria-label="Next image">&#8250;</button>
-                        <div class="property-media-count" data-carousel-count>1/${imageUrls.length}</div>`
-                     : ""
-                 }`
+              ? `<img class="property-image" src="${imageUrls[0]}" alt="${property.title} image" loading="lazy" />`
               : `<div class="property-image-placeholder">No image found</div>`
           }
         </div>
@@ -252,6 +240,24 @@ const renderProperties = (properties = []) => {
       }
     )
     .join("");
+
+  propertyList.querySelectorAll(".property-media").forEach((media, index) => {
+    const propertyCard = media.closest(".property-item");
+    const detailLink = propertyCard?.querySelector('a[href^="/pages/property-details?id="]');
+    if (!detailLink) return;
+
+    media.addEventListener("click", (event) => {
+      if (event.target.closest("a") || event.target.closest("button") || event.target.closest("input")) {
+        return;
+      }
+
+      window.location.href = detailLink.getAttribute("href");
+    });
+
+    if (media.classList.contains("property-carousel")) {
+      startCarouselAutoplay(media);
+    }
+  });
 
   propertyList.querySelectorAll("[data-request]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -325,20 +331,6 @@ const renderProperties = (properties = []) => {
         input.value = "";
       }
     });
-  });
-
-  propertyList.querySelectorAll(".property-carousel [data-carousel-action]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const carousel = button.closest(".property-carousel");
-      if (!carousel) return;
-
-      const direction = button.dataset.carouselAction === "prev" ? -1 : 1;
-      moveCarousel(carousel, direction);
-    });
-  });
-
-  propertyList.querySelectorAll(".property-carousel").forEach((carousel) => {
-    startCarouselAutoplay(carousel);
   });
 };
 

@@ -1,4 +1,22 @@
 const dashboardRoot = document.getElementById("dashboard-root");
+const dashboardTitle = document.getElementById("dashboard-title");
+const dashboardSubtitle = document.getElementById("dashboard-subtitle");
+
+const personalizeDashboardHeader = () => {
+  const user = getUser();
+  const fullName = String(user?.fullName || "").trim();
+  const firstName = fullName ? fullName.split(/\s+/)[0] : "";
+
+  if (dashboardTitle) {
+    dashboardTitle.textContent = firstName ? `${firstName}'s Dashboard` : "Your Dashboard";
+  }
+
+  if (dashboardSubtitle) {
+    dashboardSubtitle.textContent = fullName
+      ? `Welcome ${fullName}. Manage properties, requests, and track verification workflows in real-time.`
+      : "Manage properties, requests, and track verification workflows in real-time.";
+  }
+};
 
 const badgeClass = (status) => {
   if (!status) return "pending";
@@ -154,3 +172,4 @@ const loadDashboard = async () => {
 };
 
 window.addEventListener("DOMContentLoaded", loadDashboard);
+window.addEventListener("DOMContentLoaded", personalizeDashboardHeader);

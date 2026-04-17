@@ -7,6 +7,7 @@ const {
   updateProperty,
   deleteProperty,
   listMyProperties,
+  listCurrentlySellingProperties,
 } = require("../controllers/propertyController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
@@ -27,6 +28,12 @@ const propertyValidation = [
 
 router.get("/", listProperties);
 router.get("/my", protect, authorize("User", "Admin", "Buyer", "Seller"), listMyProperties);
+router.get(
+  "/selling/current",
+  protect,
+  authorize("User", "Buyer", "Seller", "Admin"),
+  listCurrentlySellingProperties
+);
 router.get("/:id", getPropertyById);
 
 router.post(

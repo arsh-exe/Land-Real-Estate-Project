@@ -233,6 +233,71 @@ const listMyProperties = async (req, res, next) => {
   }
 };
 
+const listCurrentlySellingProperties = async (req, res, next) => {
+  try {
+    const pendingRegistrations = await Registration.find({
+      seller: req.user._id,
+      finalStatus: "Pending",
+      "sellerDecision.status": { $in: ["Pending", "Approved"] },
+    }).select("property");
+
+    const propertyIds = [
+      ...new Set(
+        pendingRegistrations
+          .map((registration) => registration?.property)
+          .filter(Boolean)
+          .map((propertyId) => String(propertyId))
+      ),
+    ];
+
+    if (!propertyIds.length) {
+      return res.status(200).json({ properties: [] });
+    }
+
+    const properties = await Property.find({
+      _id: { $in: propertyIds },
+      owner: req.user._id,
+    })
+      .populate("owner", "fullName email role")
+      .populate("documents")
+      .sort({ updatedAt: -1 });
+
+    if (!properties.length) {
+      return res.status(200).json({ properties: [] });
+    }
+
+    const requestCounts = await Registration.aggregate([
+      {
+        $match: {
+          seller: req.user._id,
+          finalStatus: "Pending",
+          "sellerDecision.status": { $in: ["Pending", "Approved"] },
+          property: { $in: properties.map((property) => property._id) },
+        },
+      },
+      {
+        $group: {
+          _id: "$property",
+          pendingRequestsCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const requestCountMap = new Map(
+      requestCounts.map((entry) => [String(entry._id), entry.pendingRequestsCount])
+    );
+
+    const data = properties.map((property) => ({
+      ...property.toObject(),
+      pendingRequestsCount: requestCountMap.get(String(property._id)) || 0,
+    }));
+
+    return res.status(200).json({ properties: data });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createProperty,
   listProperties,
@@ -240,4 +305,5 @@ module.exports = {
   updateProperty,
   deleteProperty,
   listMyProperties,
+  listCurrentlySellingProperties,
 };

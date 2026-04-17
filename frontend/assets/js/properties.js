@@ -23,6 +23,10 @@ const parsePropertiesPageMode = () => {
     return "mine";
   }
 
+  if (isSeller && view === "selling") {
+    return "selling";
+  }
+
   return "all";
 };
 
@@ -54,6 +58,15 @@ const updatePropertiesPageLayout = () => {
   if (mode === "mine") {
     if (titleEl) titleEl.textContent = "My Properties";
     if (subtitleEl) subtitleEl.textContent = "View and manage properties registered under your account.";
+    filterBlock?.classList.add("hidden");
+    addBlock?.classList.add("hidden");
+    listingBlock?.classList.remove("hidden");
+    return;
+  }
+
+  if (mode === "selling") {
+    if (titleEl) titleEl.textContent = "Currently Selling";
+    if (subtitleEl) subtitleEl.textContent = "Properties you currently have in active transfer requests.";
     filterBlock?.classList.add("hidden");
     addBlock?.classList.add("hidden");
     listingBlock?.classList.remove("hidden");
@@ -252,9 +265,9 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
   const normalizedProperties = properties
     .map(normalizeProperty)
     .filter((property) => {
-      if (pageMode === "mine") return true;
+      if (["mine", "selling"].includes(pageMode)) return true;
 
-      if (!["user", "buyer"].includes(currentRole)) return true;
+      if (!["user", "buyer", "seller"].includes(currentRole)) return true;
 
       const ownerId = property?.owner?._id || property?.owner?.id || property?.owner;
       if (!currentUserId || !ownerId) return true;
@@ -272,15 +285,29 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
       (property) => {
         const ownerId = property?.owner?._id || property?.owner?.id || property?.owner;
         const isOwner = Boolean(currentUserId) && String(ownerId) === String(currentUserId);
-        const canManage =
-          currentRole === "admin" ||
-          (["user", "seller"].includes(currentRole) && isOwner);
+        const isAdmin = currentRole === "admin";
         const imageDocs = getImageDocuments(property).filter((doc) => Boolean(doc?.filePath));
         const imageUrls = imageDocs.map((doc) => `${SERVER_URL}${doc.filePath}`);
         const hasImage = imageUrls.length > 0;
         const encodedImages = encodeURIComponent(JSON.stringify(imageUrls));
         const status = propertyStatusMap.get(String(property._id)) || "available";
         const statusClass = getPropertyStatusClass(status);
+        const actionButtons = `
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
+            <a href="/pages/property-details?id=${property._id}" class="btn btn-outline btn-sm">View Details</a>
+            ${
+              currentRole === "user" && !isOwner
+                ? `<button class="btn btn-primary btn-sm" data-request="${property._id}">Request Registration</button>`
+                : ""
+            }
+            ${
+              isAdmin
+                ? `<button class="btn btn-secondary btn-sm" data-edit="${property._id}">Update</button>
+                   <button class="btn btn-danger btn-sm" data-delete="${property._id}">Delete</button>`
+                : ""
+            }
+          </div>
+        `;
         const imageMarkup = hasImage
           ? `<div class="carousel-track" style="transform: translateX(0px);">
                ${imageUrls
@@ -312,26 +339,7 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
         <p><strong>${toCurrency(property.price)}</strong> • ${property.area ?? "Area not specified"}${
         property.area !== null && property.area !== undefined ? " sq.ft" : ""
       }</p>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-          <a class="btn btn-outline" href="/pages/property-details?id=${property._id}">View Details</a>
-          ${
-            ["user", "buyer"].includes(currentRole) && !isOwner
-              ? `<button class="btn btn-primary" data-request="${property._id}">Request Registration</button>`
-              : ""
-          }
-          ${
-            canManage
-              ? `<button class="btn btn-outline" data-edit="${property._id}">Update</button>
-                 ${
-                   hasImage
-                     ? ""
-                     : `<label class="btn btn-outline" for="upload-image-${property._id}">Add Images</label>
-                        <input id="upload-image-${property._id}" type="file" accept="image/*" multiple class="hidden" data-upload-image="${property._id}" />`
-                 }
-                 <button class="btn btn-danger" data-delete="${property._id}">Delete</button>`
-              : ""
-          }
-        </div>
+        ${actionButtons}
       </article>
     `;
       }
@@ -452,7 +460,10 @@ const loadProperties = async (query = "") => {
     const role = roleKey(user?.role);
     const mode = parsePropertiesPageMode();
     const shouldLoadMine = ["user", "seller", "buyer"].includes(role) && mode === "mine";
-    const endpoint = shouldLoadMine
+    const shouldLoadSelling = ["user", "seller", "buyer"].includes(role) && mode === "selling";
+    const endpoint = shouldLoadSelling
+      ? "/properties/selling/current"
+      : shouldLoadMine
       ? "/properties/my"
       : `/properties${query ? `?${query}` : ""}`;
     const [propertyData, registrationData] = await Promise.all([

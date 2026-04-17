@@ -9,6 +9,7 @@ const menuByRole = {
     { label: "Add Property", href: "/pages/properties?view=add" },
     { label: "Search Properties", href: "/pages/properties.html" },
     { label: "My Properties", href: "/pages/properties?view=mine" },
+    { label: "Currently Selling", href: "/pages/properties?view=selling" },
     { label: "Requests", href: "/pages/requests.html" },
     { label: "Logout", href: "#logout", action: "logout" },
   ],
@@ -17,6 +18,7 @@ const menuByRole = {
     { label: "Add Property", href: "/pages/properties?view=add" },
     { label: "Search Properties", href: "/pages/properties.html" },
     { label: "My Properties", href: "/pages/properties?view=mine" },
+    { label: "Currently Selling", href: "/pages/properties?view=selling" },
     { label: "Requests", href: "/pages/requests.html" },
     { label: "Logout", href: "#logout", action: "logout" },
   ],
@@ -25,6 +27,7 @@ const menuByRole = {
     { label: "Add Property", href: "/pages/properties?view=add" },
     { label: "Search Properties", href: "/pages/properties.html" },
     { label: "My Properties", href: "/pages/properties?view=mine" },
+    { label: "Currently Selling", href: "/pages/properties?view=selling" },
     { label: "Requests", href: "/pages/requests.html" },
     { label: "Logout", href: "#logout", action: "logout" },
   ],
@@ -111,6 +114,7 @@ const renderNavbar = () => {
       // Current URL states
       const isAdding = currentView === "add" || currentAction === "add";
       const isMine = currentView === "mine" || currentMine === "1" || currentMine === "true";
+      const isSelling = currentView === "selling";
 
       // Match "Add Property" link
       if (itemView === "add" || itemAction === "add") {
@@ -122,9 +126,14 @@ const renderNavbar = () => {
         return isMine;
       }
 
+      // Match "Currently Selling" link
+      if (itemView === "selling") {
+        return isSelling;
+      }
+
       // Generic properties link (Search Properties / All Properties)
-      // Only active if NOT in "add" or "mine" mode.
-      return !isAdding && !isMine;
+      // Only active if NOT in a special properties mode.
+      return !isAdding && !isMine && !isSelling;
     }
 
     const itemParams = [...itemUrl.searchParams.entries()];

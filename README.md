@@ -21,26 +21,81 @@ Production-ready full-stack MERN-style application using **MongoDB, Express, Nod
 
 ## Run Locally
 
-## 1) Backend
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+- MongoDB running locally on `mongodb://127.0.0.1:27017`
+
+### 1) Clone and open project
+
+```bash
+git clone https://github.com/Praveencity/Land-Real-Estate-Project.git
+cd Land-Real-Estate-Project
+```
+
+### 2) Configure backend environment
+
+Create `backend/.env` from `backend/.env.example` and verify values.
+
+Windows (PowerShell):
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+```
+
+macOS/Linux:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Typical `backend/.env` values:
+
+```env
+NODE_ENV=development
+PORT=5000
+MONGO_URI=mongodb://127.0.0.1:27017/land_registry
+JWT_SECRET=land_registry_dev_super_secret_change_me
+JWT_EXPIRES_IN=1d
+CLIENT_URL=http://localhost:5500
+```
+
+### 3) Install dependencies
+
+Backend:
 
 ```bash
 cd backend
-copy .env.example .env
 npm install
-npm run dev
 ```
 
-Backend runs at `http://localhost:5000`.
-
-## 2) Frontend
+Frontend (open a second terminal from repo root):
 
 ```bash
 cd frontend
 npm install
+```
+
+### 4) Start the application
+
+Start backend (Terminal 1):
+
+```bash
+cd backend
+npm run dev
+```
+
+Start frontend (Terminal 2):
+
+```bash
+cd frontend
 npm start
 ```
 
-Frontend runs at `http://localhost:5500`.
+Backend URL: `http://localhost:5000`
+
+Frontend URL: `http://localhost:5500`
 
 ## Default API Base URL
 

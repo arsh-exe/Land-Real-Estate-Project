@@ -77,6 +77,11 @@ const toCurrency = (amount) =>
     Number(amount || 0)
   );
 
+const findFirstImageDocument = (property = {}) => {
+  const docs = Array.isArray(property.documents) ? property.documents : [];
+  return docs.find((doc) => (doc?.mimeType || "").toLowerCase().startsWith("image/")) || null;
+};
+
 const normalizeProperty = (property = {}) => {
   const title = property.title || property.name || "Untitled property";
   const location = property.location || property.address || "Location not provided";
@@ -124,9 +129,18 @@ const renderProperties = (properties = []) => {
         const canManage =
           currentRole === "admin" ||
           (currentRole === "seller" && isOwner);
+        const imageDoc = findFirstImageDocument(property);
+        const hasImage = Boolean(imageDoc?.filePath);
 
         return `
       <article class="property-item">
+        <div class="property-media">
+          ${
+            hasImage
+              ? `<img class="property-image" src="${SERVER_URL}${imageDoc.filePath}" alt="${property.title} image" loading="lazy" />`
+              : `<div class="property-image-placeholder">No image found</div>`
+          }
+        </div>
         <h3>${property.title}</h3>
         <p>${property.location} • ${property.type}</p>
         <p><strong>${toCurrency(property.price)}</strong> • ${property.area ?? "Area not specified"}${
@@ -147,6 +161,12 @@ const renderProperties = (properties = []) => {
           ${
             canManage
               ? `<button class="btn btn-outline" data-edit="${property._id}">Update</button>
+                 ${
+                   hasImage
+                     ? ""
+                     : `<label class="btn btn-outline" for="upload-image-${property._id}">Add Images</label>
+                        <input id="upload-image-${property._id}" type="file" accept="image/*" multiple class="hidden" data-upload-image="${property._id}" />`
+                 }
                  <button class="btn btn-danger" data-delete="${property._id}">Delete</button>`
               : ""
           }
@@ -204,6 +224,29 @@ const renderProperties = (properties = []) => {
         } else {
           alert(error.message);
         }
+      }
+    });
+  });
+
+  propertyList.querySelectorAll("[data-upload-image]").forEach((input) => {
+    input.addEventListener("change", async () => {
+      const files = Array.from(input.files || []);
+      if (!files.length) return;
+
+      const formData = new FormData();
+      files.forEach((file) => formData.append("documents", file));
+
+      try {
+        await apiRequest(`/properties/${input.dataset.uploadImage}`, {
+          method: "PUT",
+          body: formData,
+        });
+        showToast("Property images uploaded successfully", "success");
+        await loadProperties();
+      } catch (error) {
+        showToast(error.message, "error");
+      } finally {
+        input.value = "";
       }
     });
   });

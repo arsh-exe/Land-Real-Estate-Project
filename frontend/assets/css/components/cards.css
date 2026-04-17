@@ -42,3 +42,35 @@
   border-color: var(--gov-gold);
   transform: translateX(4px);
 }
+
+#property-list {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+#property-list .property-item {
+  height: 100%;
+}
+
+.property-media {
+  width: 100%;
+  height: 180px;
+  border-radius: 10px;
+  margin-bottom: 0.85rem;
+  border: 1px dashed #c8d4e4;
+  background: #f5f9ff;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.property-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.property-image-placeholder {
+  color: var(--muted);
+  font-weight: 600;
+}

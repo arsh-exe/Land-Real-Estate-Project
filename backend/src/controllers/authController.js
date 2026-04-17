@@ -5,6 +5,7 @@ const createToken = require("../utils/createToken");
 const signup = async (req, res, next) => {
   try {
     const { fullName, email, password, role } = req.body;
+    const normalizedRole = ["Buyer", "Seller"].includes(role) ? "User" : role;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -16,7 +17,7 @@ const signup = async (req, res, next) => {
       fullName,
       email,
       password: hashedPassword,
-      role,
+      role: normalizedRole,
     });
 
     const token = createToken(user);

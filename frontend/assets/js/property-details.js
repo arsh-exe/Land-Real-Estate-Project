@@ -234,16 +234,16 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
 
       <aside class="pd-sidebar">
         <article class="card">
-          <h3>Quick Facts</h3>
+          <h3>Property Overview</h3>
           <p><span class="badge ${statusClass}">${propertyStatus}</span></p>
           <div class="pd-action-row">
             ${
-              currentRole === "buyer" && !isOwner
+              ["user", "buyer"].includes(currentRole) && !isOwner
                 ? `<button class="btn btn-primary" data-request-registration="${property._id}">Request Registration</button>`
                 : ""
             }
             ${
-              currentRole === "buyer" && isOwner
+              ["user", "buyer"].includes(currentRole) && isOwner
                 ? `<button class="btn btn-outline" disabled style="border-color: var(--success); color: var(--success); cursor: default;">✓ Owned by You</button>`
                 : ""
             }

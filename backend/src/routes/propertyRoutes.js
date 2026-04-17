@@ -26,13 +26,13 @@ const propertyValidation = [
 ];
 
 router.get("/", listProperties);
-router.get("/my", protect, authorize("Seller", "Admin", "Buyer"), listMyProperties);
+router.get("/my", protect, authorize("User", "Admin", "Buyer", "Seller"), listMyProperties);
 router.get("/:id", getPropertyById);
 
 router.post(
   "/",
   protect,
-  authorize("Seller", "Admin"),
+  authorize("User", "Admin", "Seller", "Buyer"),
   upload.fields([
     { name: "images", maxCount: 10 },
     { name: "documents", maxCount: 5 }
@@ -54,7 +54,7 @@ router.post(
 router.put(
   "/:id",
   protect,
-  authorize("Seller", "Admin", "Government Officer"),
+  authorize("User", "Admin", "Government Officer", "Seller", "Buyer"),
   upload.fields([
     { name: "images", maxCount: 10 },
     { name: "documents", maxCount: 5 }
@@ -64,6 +64,6 @@ router.put(
   updateProperty
 );
 
-router.delete("/:id", protect, authorize("Seller", "Admin"), deleteProperty);
+router.delete("/:id", protect, authorize("User", "Admin", "Seller", "Buyer"), deleteProperty);
 
 module.exports = router;

@@ -16,7 +16,7 @@ router.get("/", protect, listRequests);
 router.post(
   "/",
   protect,
-  authorize("Buyer"),
+  authorize("User", "Buyer"),
   [body("propertyId").isMongoId().withMessage("Valid property id is required")],
   validate,
   createRequest
@@ -25,7 +25,7 @@ router.post(
 router.patch(
   "/:id/seller-decision",
   protect,
-  authorize("Seller"),
+  authorize("User", "Seller"),
   [
     body("status").isIn(["Approved", "Rejected"]).withMessage("Status must be Approved or Rejected"),
     body("note").optional().trim().isLength({ max: 500 }),

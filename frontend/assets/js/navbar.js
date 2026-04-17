@@ -4,16 +4,26 @@ const menuByRole = {
     { label: "Login", href: "/pages/login.html" },
     { label: "Register", href: "/pages/register.html" },
   ],
-  buyer: [
+  user: [
     { label: "Dashboard", href: "/pages/dashboard.html" },
+    { label: "Add Property", href: "/pages/properties?view=add" },
     { label: "Search Properties", href: "/pages/properties.html" },
     { label: "My Properties", href: "/pages/properties?view=mine" },
-    { label: "My Requests", href: "/pages/requests.html" },
+    { label: "Requests", href: "/pages/requests.html" },
+    { label: "Logout", href: "#logout", action: "logout" },
+  ],
+  buyer: [
+    { label: "Dashboard", href: "/pages/dashboard.html" },
+    { label: "Add Property", href: "/pages/properties?view=add" },
+    { label: "Search Properties", href: "/pages/properties.html" },
+    { label: "My Properties", href: "/pages/properties?view=mine" },
+    { label: "Requests", href: "/pages/requests.html" },
     { label: "Logout", href: "#logout", action: "logout" },
   ],
   seller: [
     { label: "Dashboard", href: "/pages/dashboard.html" },
     { label: "Add Property", href: "/pages/properties?view=add" },
+    { label: "Search Properties", href: "/pages/properties.html" },
     { label: "My Properties", href: "/pages/properties?view=mine" },
     { label: "Requests", href: "/pages/requests.html" },
     { label: "Logout", href: "#logout", action: "logout" },
@@ -82,7 +92,7 @@ const renderNavbar = () => {
       const isAddLink = itemView === "add" || itemAction === "add";
 
       // Buyers and sellers should land on "My Properties" context.
-      if (["buyer", "seller"].includes(role)) {
+      if (["user", "buyer", "seller"].includes(role)) {
         return isMineLink;
       }
 

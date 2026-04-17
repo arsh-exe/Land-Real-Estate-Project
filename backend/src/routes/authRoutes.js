@@ -22,7 +22,7 @@ router.post(
       .withMessage("Password must be at least 8 characters"),
     body("role")
       .optional()
-      .isIn(["Admin", "Buyer", "Seller", "Government Officer"])
+      .isIn(["Admin", "User", "Government Officer"])
       .withMessage("Invalid role"),
   ],
   validate,

@@ -4,6 +4,10 @@ const listTransactions = async (req, res, next) => {
   try {
     const filter = {};
 
+    if (req.user.role === "User") {
+      filter.$or = [{ toOwner: req.user._id }, { fromOwner: req.user._id }];
+    }
+
     if (req.user.role === "Buyer") {
       filter.toOwner = req.user._id;
     }

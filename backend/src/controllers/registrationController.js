@@ -162,6 +162,10 @@ const listRequests = async (req, res, next) => {
   try {
     const filter = {};
 
+    if (req.user.role === "User") {
+      filter.$or = [{ buyer: req.user._id }, { seller: req.user._id }];
+    }
+
     if (req.user.role === "Buyer") {
       filter.buyer = req.user._id;
     }

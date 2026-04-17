@@ -9,22 +9,7 @@ const getDashboardData = async (req, res, next) => {
 
     let data = {};
 
-    if (role === "Buyer") {
-      const assetStats = await Property.aggregate([
-        { $match: { owner: _id } },
-        { $group: { _id: null, totalValue: { $sum: "$price" } } },
-      ]);
-      const totalAssetsValue = assetStats.length > 0 ? assetStats[0].totalValue : 0;
-
-      const myRequests = await Registration.find({ buyer: _id }).sort({ createdAt: -1 }).limit(10);
-      data = {
-        myRequestsCount: await Registration.countDocuments({ buyer: _id }),
-        approvedCount: await Registration.countDocuments({ buyer: _id, finalStatus: "Approved" }),
-        pendingCount: await Registration.countDocuments({ buyer: _id, finalStatus: "Pending" }),
-        totalAssetsValue,
-        myRequests,
-      };
-    } else if (role === "Seller") {
+    if (["User", "Buyer", "Seller"].includes(role)) {
       const myPropertiesCount = await Property.countDocuments({ owner: _id });
       const assetStats = await Property.aggregate([
         { $match: { owner: _id } },
@@ -32,15 +17,20 @@ const getDashboardData = async (req, res, next) => {
       ]);
       const totalAssetsValue = assetStats.length > 0 ? assetStats[0].totalValue : 0;
 
-      const myProperties = await Property.find({ owner: _id }).sort({ createdAt: -1 }).limit(10);
+      const myRequests = await Registration.find({ buyer: _id }).sort({ createdAt: -1 }).limit(10);
       const incomingRequests = await Registration.find({ seller: _id }).sort({ createdAt: -1 }).limit(10);
+
       data = {
         myPropertiesCount,
-        totalAssetsValue,
         incomingRequestsCount: await Registration.countDocuments({ seller: _id }),
         pendingApprovals: await Registration.countDocuments({ seller: _id, "sellerDecision.status": "Pending" }),
-        myProperties,
+        myRequestsCount: await Registration.countDocuments({ buyer: _id }),
+        approvedCount: await Registration.countDocuments({ buyer: _id, finalStatus: "Approved" }),
+        pendingCount: await Registration.countDocuments({ buyer: _id, finalStatus: "Pending" }),
+        totalAssetsValue,
+        myProperties: await Property.find({ owner: _id }).sort({ createdAt: -1 }).limit(10),
         incomingRequests,
+        myRequests,
       };
     } else {
       data = {

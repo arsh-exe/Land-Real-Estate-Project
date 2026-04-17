@@ -39,8 +39,24 @@ const renderDashboard = (role, data) => {
   if (!dashboardRoot) return;
 
   const metricCards = [];
+  const isUnifiedUser = role === "User";
+  const recentActivityItems = isUnifiedUser
+    ? [...(data.myRequests || []), ...(data.incomingRequests || [])]
+    : (data.myRequests || data.incomingRequests || data.recentTransactions || []);
 
-  if (role === "Buyer") {
+  if (role === "User") {
+    metricCards.push(
+      { label: "My Properties", value: data.myPropertiesCount, href: "/pages/properties?view=mine" },
+      { label: "My Requests", value: data.myRequestsCount, href: "/pages/requests?section=pending" },
+      {
+        label: "Total Asset Value",
+        value: toCurrency(data.totalAssetsValue || 0),
+        href: "/pages/properties?view=mine",
+        metricClass: "metric-currency",
+      },
+      { label: "Pending Decisions", value: data.pendingApprovals, href: "/pages/requests?section=pending" }
+    );
+  } else if (role === "Buyer") {
     metricCards.push(
       { label: "My Requests", value: data.myRequestsCount, href: "/pages/requests?section=pending" },
       {
@@ -90,7 +106,7 @@ const renderDashboard = (role, data) => {
     <section class="card" style="margin-top: 1rem;">
       <h3>Recent Activity</h3>
       <div class="list">
-        ${(data.myRequests || data.incomingRequests || data.recentTransactions || [])
+        ${recentActivityItems
           .slice(0, 8)
           .map((item) => {
             const status = item.finalStatus || item.status || "Pending";

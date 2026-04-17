@@ -2,6 +2,7 @@ const pendingRequestsRoot = document.getElementById("requests-pending-root");
 const approvedRequestsRoot = document.getElementById("requests-approved-root");
 const rejectedRequestsRoot = document.getElementById("requests-rejected-root");
 const transactionsRoot = document.getElementById("transactions-root");
+let transactionSwiper = null;
 
 const openRequestedSection = () => {
   const params = new URLSearchParams(window.location.search);
@@ -44,7 +45,7 @@ const makeBadge = (status) => `<span class="badge ${String(status).toLowerCase()
 const actionButtons = (request, role) => {
   let buttons = "";
 
-  if (role === "seller" && request.sellerDecision?.status === "Pending") {
+  if (["user", "seller"].includes(role) && request.sellerDecision?.status === "Pending") {
     buttons += `
       <button class="btn btn-primary" data-action="seller" data-status="Approved" data-id="${request._id}">Approve</button>
       <button class="btn btn-danger" data-action="seller" data-status="Rejected" data-id="${request._id}">Reject</button>
@@ -175,6 +176,50 @@ const bindRequestCardNavigation = () => {
   });
 };
 
+const destroyTransactionSwiper = () => {
+  if (transactionSwiper && typeof transactionSwiper.destroy === "function") {
+    transactionSwiper.destroy(true, true);
+  }
+  transactionSwiper = null;
+};
+
+const initTransactionSwiper = () => {
+  const swiperRoot = document.querySelector(".txn-swiper");
+  if (!swiperRoot || typeof Swiper === "undefined") return;
+
+  destroyTransactionSwiper();
+
+  transactionSwiper = new Swiper(".txn-swiper", {
+    loop: true,
+    centeredSlides: true,
+    spaceBetween: 24,
+    autoplay: {
+      delay: 2500,
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true,
+    },
+    pagination: {
+      el: ".txn-swiper .swiper-pagination",
+      clickable: true,
+    },
+    navigation: {
+      nextEl: ".txn-swiper .swiper-button-next",
+      prevEl: ".txn-swiper .swiper-button-prev",
+    },
+    breakpoints: {
+      0: {
+        slidesPerView: 1,
+      },
+      720: {
+        slidesPerView: 2,
+      },
+      1100: {
+        slidesPerView: 2.6,
+      },
+    },
+  });
+};
+
 const renderRequestList = (root, requests, role, emptyMessage) => {
   if (!root) return;
 
@@ -261,31 +306,58 @@ const loadRequests = async () => {
 const loadTransactions = async () => {
   if (!transactionsRoot) return;
 
+  destroyTransactionSwiper();
+
   // Show skeleton loading state
-  transactionsRoot.innerHTML = Array(3).fill(`
-    <article class="txn-item skeleton" style="border: none; box-shadow: none; height: 100px;">
-      <div class="skeleton-text short"></div>
-      <div class="skeleton-title" style="margin-top: 0.5rem;"></div>
-    </article>
-  `).join("");
+  transactionsRoot.innerHTML = `
+    <div class="txn-swiper swiper">
+      <div class="swiper-wrapper">
+        ${Array(3)
+          .fill(`
+            <article class="txn-item skeleton txn-carousel-item swiper-slide">
+              <div class="skeleton-text short"></div>
+              <div class="skeleton-title" style="margin-top: 0.5rem;"></div>
+            </article>
+          `)
+          .join("")}
+      </div>
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+      <div class="swiper-pagination"></div>
+    </div>
+  `;
 
   try {
     const { transactions } = await apiRequest("/transactions");
-    transactionsRoot.innerHTML = (transactions || [])
+    const transactionItems = (transactions || [])
       .map(
         (item) => `
-        <article class="txn-item">
-          <strong>${item.transactionId}</strong>
-          <p>${item.property?.title || "Property"}</p>
-          <p>${makeBadge(item.status)}</p>
-        </article>
-      `
+          <article class="txn-item txn-carousel-item swiper-slide">
+            <strong>${item.transactionId}</strong>
+            <p>${item.property?.title || "Property"}</p>
+            <p>${makeBadge(item.status)}</p>
+          </article>
+        `
       )
       .join("");
 
     if (!transactions.length) {
       transactionsRoot.innerHTML = "<p>No transactions available.</p>";
+      return;
     }
+
+    transactionsRoot.innerHTML = `
+      <div class="txn-swiper swiper">
+        <div class="swiper-wrapper">
+          ${transactionItems}
+        </div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-pagination"></div>
+      </div>
+    `;
+
+    initTransactionSwiper();
   } catch (error) {
     transactionsRoot.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
     showToast(error.message, "error");

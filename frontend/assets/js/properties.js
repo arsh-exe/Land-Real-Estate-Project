@@ -11,9 +11,9 @@ const parsePropertiesPageMode = () => {
   const action = (params.get("action") || "").trim().toLowerCase();
   const mine = (params.get("mine") || "").trim().toLowerCase();
 
-  const isSeller = role === "seller";
+  const isSeller = role === "seller" || role === "user" || role === "buyer";
   const isAdmin = role === "admin";
-  const isBuyer = role === "buyer";
+  const isBuyer = role === "buyer" || role === "user";
 
   if ((isSeller || isAdmin) && (view === "add" || action === "add")) {
     return "add";
@@ -38,7 +38,7 @@ const updatePropertiesPageLayout = () => {
   const listingBlock = document.getElementById("listing-block");
 
   if (addBlock) {
-    const canAdd = user && ["seller", "admin"].includes(role);
+    const canAdd = user && ["user", "seller", "buyer", "admin"].includes(role);
     addBlock.classList.toggle("hidden", !canAdd);
   }
 
@@ -53,7 +53,7 @@ const updatePropertiesPageLayout = () => {
 
   if (mode === "mine") {
     if (titleEl) titleEl.textContent = "My Properties";
-    if (subtitleEl) subtitleEl.textContent = "View and manage properties registered under your seller account.";
+    if (subtitleEl) subtitleEl.textContent = "View and manage properties registered under your account.";
     filterBlock?.classList.add("hidden");
     addBlock?.classList.add("hidden");
     listingBlock?.classList.remove("hidden");
@@ -64,12 +64,8 @@ const updatePropertiesPageLayout = () => {
   if (subtitleEl)
     subtitleEl.textContent = "Search listings, apply filters, manage submissions, and register your properties securely.";
   filterBlock?.classList.remove("hidden");
-  // Keep add form available as a fallback for seller/admin so users can always add from this page.
-  if (user && ["seller", "admin"].includes(role)) {
-    addBlock?.classList.remove("hidden");
-  } else {
-    addBlock?.classList.add("hidden");
-  }
+  // In search/list mode, hide the add form and keep focus on discovery.
+  addBlock?.classList.add("hidden");
   listingBlock?.classList.remove("hidden");
 };
 
@@ -158,39 +154,62 @@ const parseCarouselImages = (carousel) => {
 };
 
 const setCarouselFrame = (carousel, nextIndex) => {
-  const imageEl = carousel.querySelector(".property-image");
-  if (!imageEl) return;
+  const track = carousel.querySelector(".carousel-track");
+  if (!track) return;
 
   const images = parseCarouselImages(carousel);
-  if (images.length === 0) return;
+  const totalRealImages = images.length;
+  
+  if (totalRealImages <= 1) return;
 
-  const safeIndex = ((nextIndex % images.length) + images.length) % images.length;
-  const nextSrc = images[safeIndex];
-  if (!nextSrc || imageEl.src === nextSrc) {
-    return;
+  // 1. Ensure transitions are ON
+  track.style.transition = "transform 0.5s ease-in-out";
+
+  let targetIndex = nextIndex;
+
+  // If going backwards from the first image, loop to the last real image
+  if (targetIndex < 0) {
+    targetIndex = totalRealImages - 1;
   }
 
-  carousel.dataset.index = String(safeIndex);
-  imageEl.classList.add("is-fading");
+  // 2. Perform the slide
+  const slideWidth = carousel.clientWidth;
+  track.style.transform = `translateX(-${targetIndex * slideWidth}px)`;
+  carousel.dataset.index = String(targetIndex);
 
-  // Preload next image before swap to avoid abrupt flashing during transitions.
-  const preload = new Image();
-  preload.onload = () => {
-    imageEl.src = nextSrc;
-    window.requestAnimationFrame(() => {
-      imageEl.classList.remove("is-fading");
-    });
-  };
-  preload.onerror = () => {
-    imageEl.classList.remove("is-fading");
-  };
-  preload.src = nextSrc;
+  // 3. Update the text counter (If it's on the clone, display "1 / N")
+  const countEl = carousel.querySelector("[data-carousel-count]");
+  if (countEl) {
+    const displayIndex = targetIndex === totalRealImages ? 0 : targetIndex;
+    countEl.textContent = `${displayIndex + 1}/${totalRealImages}`;
+  }
+
+  // 4. The Seamless Loop Magic!
+  // If we just slid to the clone at the end of the track...
+  if (targetIndex === totalRealImages) {
+    carousel.dataset.isAnimating = "true"; // Lock navigation briefly
+
+    // Wait exactly 500ms for the CSS sliding animation to finish
+    window.setTimeout(() => {
+      // Turn off animation
+      track.style.transition = "none";
+
+      // Instantly teleport back to the real Image 1
+      track.style.transform = `translateX(0px)`;
+      carousel.dataset.index = "0";
+
+      // Force the browser to register the teleport before unlocking
+      track.offsetHeight;
+      carousel.dataset.isAnimating = "false";
+    }, 500);
+  }
 };
 
 const moveCarousel = (carousel, direction) => {
-  const images = parseCarouselImages(carousel);
-  if (images.length < 2) return;
-  const currentIndex = Number(carousel.dataset.index || "0");
+  // Prevent rapid clicking while the teleport is happening
+  if (carousel.dataset.isAnimating === "true") return;
+
+  const currentIndex = parseInt(carousel.dataset.index || "0", 10);
   setCarouselFrame(carousel, currentIndex + direction);
 };
 
@@ -198,14 +217,27 @@ const startCarouselAutoplay = (carousel) => {
   const images = parseCarouselImages(carousel);
   if (images.length < 2) return;
 
-  const timer = window.setInterval(() => {
-    if (!carousel.isConnected) {
-      window.clearInterval(timer);
-      return;
-    }
+  let timer = null;
 
-    moveCarousel(carousel, 1);
-  }, CAROUSEL_INTERVAL_MS);
+  const startTimer = () => {
+    if (timer) return;
+    timer = window.setInterval(() => {
+      if (!carousel.isConnected) {
+        stopTimer();
+        return;
+      }
+
+      moveCarousel(carousel, 1);
+    }, CAROUSEL_INTERVAL_MS);
+  };
+
+  const stopTimer = () => {
+    if (!timer) return;
+    window.clearInterval(timer);
+    timer = null;
+  };
+
+  startTimer();
 };
 
 const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
@@ -213,7 +245,19 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
   const currentUser = getUser();
   const currentRole = roleKey(currentUser?.role);
   const currentUserId = currentUser?._id || currentUser?.id;
-  const normalizedProperties = properties.map(normalizeProperty);
+  const pageMode = parsePropertiesPageMode();
+  const normalizedProperties = properties
+    .map(normalizeProperty)
+    .filter((property) => {
+      if (pageMode === "mine") return true;
+
+      if (!["user", "buyer"].includes(currentRole)) return true;
+
+      const ownerId = property?.owner?._id || property?.owner?.id || property?.owner;
+      if (!currentUserId || !ownerId) return true;
+
+      return String(ownerId) !== String(currentUserId);
+    });
 
   if (normalizedProperties.length === 0) {
     propertyList.innerHTML = '<p style="color:#617189;">No properties found for the selected filters.</p>';
@@ -227,27 +271,38 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
         const isOwner = Boolean(currentUserId) && String(ownerId) === String(currentUserId);
         const canManage =
           currentRole === "admin" ||
-          (currentRole === "seller" && isOwner);
+          (["user", "seller"].includes(currentRole) && isOwner);
         const imageDocs = getImageDocuments(property).filter((doc) => Boolean(doc?.filePath));
         const imageUrls = imageDocs.map((doc) => `${SERVER_URL}${doc.filePath}`);
         const hasImage = imageUrls.length > 0;
         const encodedImages = encodeURIComponent(JSON.stringify(imageUrls));
         const status = propertyStatusMap.get(String(property._id)) || "available";
         const statusClass = getPropertyStatusClass(status);
+        const imageMarkup = hasImage
+          ? `<div class="carousel-track" style="transform: translateX(0px);">
+               ${imageUrls
+                 .map(
+                   (url) => `<img class="property-image" src="${url}" alt="${property.title} image" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'property-image-placeholder\\'>Image failed to load</div>'" />`
+                 )
+                 .join("")}
+               ${imageUrls.length > 1 ? `<img class="property-image" src="${imageUrls[0]}" aria-hidden="true" loading="lazy" />` : ""}
+             </div>
+             ${
+               imageUrls.length > 1
+                 ? `<div class="property-media-count" data-carousel-count>1/${imageUrls.length}</div>`
+                 : ""
+             }`
+          : `<div class="property-image-placeholder">No image found</div>`;
 
         return `
       <article class="property-item">
-        <div class="property-media ${hasImage ? "property-carousel" : ""}" style="cursor:pointer;" ${
+        <div class="property-media ${hasImage ? "property-carousel" : ""}" ${
           hasImage ? `data-images="${encodedImages}" data-index="0"` : ""
         }>
-          ${
-            hasImage
-              ? `<img class="property-image" src="${imageUrls[0]}" alt="${property.title} image" loading="lazy" />`
-              : `<div class="property-image-placeholder">No image found</div>`
-          }
+          ${imageMarkup}
         </div>
         <h3>${property.title}</h3>
-        <p><span class="badge ${statusClass}">${status}</span></p>
+        ${pageMode === "mine" && status === "sold" ? "" : `<p><span class="badge ${statusClass}">${status}</span></p>`}
         <p>${property.location} • ${property.type}</p>
         <p><strong>${toCurrency(property.price)}</strong> • ${property.area ?? "Area not specified"}${
         property.area !== null && property.area !== undefined ? " sq.ft" : ""
@@ -255,13 +310,8 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
           <a class="btn btn-outline" href="/pages/property-details?id=${property._id}">View Details</a>
           ${
-            currentRole === "buyer" && !isOwner
+            ["user", "buyer"].includes(currentRole) && !isOwner
               ? `<button class="btn btn-primary" data-request="${property._id}">Request Registration</button>`
-              : ""
-          }
-          ${
-            currentRole === "buyer" && isOwner
-              ? `<button class="btn btn-outline" disabled style="border-color: var(--success); color: var(--success); cursor: default;">✓ Owned by You</button>`
               : ""
           }
           ${
@@ -396,7 +446,7 @@ const loadProperties = async (query = "") => {
     const user = getUser();
     const role = roleKey(user?.role);
     const mode = parsePropertiesPageMode();
-    const shouldLoadMine = ["seller", "buyer"].includes(role) && mode === "mine";
+    const shouldLoadMine = ["user", "seller", "buyer"].includes(role) && mode === "mine";
     const endpoint = shouldLoadMine
       ? "/properties/my"
       : `/properties${query ? `?${query}` : ""}`;
@@ -436,7 +486,7 @@ addPropertyForm?.addEventListener("submit", async (event) => {
     output.style.color = "#067647";
     // Send sellers/admins to a listing view after creation so they can verify the new record.
     const role = roleKey(getUser()?.role);
-    if (role === "seller") {
+    if (["user", "seller"].includes(role)) {
       window.location.href = "/pages/properties?view=mine";
       return;
     }

@@ -177,11 +177,14 @@ const setCarouselFrame = (carousel, nextIndex) => {
   track.style.transform = `translateX(-${targetIndex * slideWidth}px)`;
   carousel.dataset.index = String(targetIndex);
 
-  // 3. Update the text counter (If it's on the clone, display "1 / N")
-  const countEl = carousel.querySelector("[data-carousel-count]");
-  if (countEl) {
+  // 3. Update the dot indicators
+  const dotsContainer = carousel.querySelector("[data-carousel-dots]");
+  if (dotsContainer) {
     const displayIndex = targetIndex === totalRealImages ? 0 : targetIndex;
-    countEl.textContent = `${displayIndex + 1}/${totalRealImages}`;
+    const dots = dotsContainer.querySelectorAll(".carousel-dot");
+    dots.forEach((dot, index) => {
+      dot.classList.toggle("active", index === displayIndex);
+    });
   }
 
   // 4. The Seamless Loop Magic!
@@ -289,7 +292,9 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
              </div>
              ${
                imageUrls.length > 1
-                 ? `<div class="property-media-count" data-carousel-count>1/${imageUrls.length}</div>`
+                 ? `<div class="carousel-dots" data-carousel-dots>
+                      ${imageUrls.map((_, i) => `<div class="carousel-dot ${i === 0 ? "active" : ""}"></div>`).join("")}
+                    </div>`
                  : ""
              }`
           : `<div class="property-image-placeholder">No image found</div>`;

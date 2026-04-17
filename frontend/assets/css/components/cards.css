@@ -216,55 +216,42 @@
 
 .carousel-track {
   display: flex;
+  flex-wrap: nowrap;
   height: 100%;
   width: 100%;
   transition: transform 0.5s ease-in-out;
 }
 
 .property-image {
-  min-width: 100%;
+  flex: 0 0 100%;
+  width: 100%;
   height: 100%;
   object-fit: cover;
-  flex-shrink: 0;
 }
 
-.property-media-dots {
+.carousel-dots {
   position: absolute;
-  left: 50%;
   bottom: 0.75rem;
+  left: 50%;
   display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.35rem 0.55rem;
-  border-radius: 999px;
-  background: rgba(8, 29, 55, 0.42);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
   transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.25s ease;
+  gap: 6px;
+  z-index: 5;
   pointer-events: none;
 }
 
-.property-media:hover .property-media-dots,
-.property-media:focus-within .property-media-dots {
-  opacity: 1;
-}
-
-.property-media-dot {
+.carousel-dot {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  border: 0;
   background: rgba(255, 255, 255, 0.45);
-  padding: 0;
-  transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: background 0.3s ease, transform 0.3s ease;
 }
 
-.property-media-dot.is-active {
+.carousel-dot.active {
   background: #ffffff;
   transform: scale(1.2);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.16);
 }
 
 .property-image-placeholder {

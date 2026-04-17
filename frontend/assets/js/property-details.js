@@ -1,4 +1,5 @@
 const detailsRoot = document.getElementById("property-details-root");
+const DETAILS_CAROUSEL_INTERVAL_MS = 4500;
 
 const toCurrency = (amount) =>
   new Intl.NumberFormat("en-IN", {
@@ -29,33 +30,54 @@ const getPropertyStatusClass = (status = "") => {
   return "available";
 };
 
-const updateHeroImage = (container, imageUrls, nextIndex) => {
-  const heroImage = container.querySelector(".pd-hero-image");
-  if (!heroImage || !imageUrls.length) return;
-
-  const safeIndex = ((nextIndex % imageUrls.length) + imageUrls.length) % imageUrls.length;
-  const nextSrc = imageUrls[safeIndex];
-  if (!nextSrc || heroImage.src === nextSrc) return;
-
-  container.dataset.index = String(safeIndex);
-  heroImage.classList.add("is-fading");
-
-  const preload = new Image();
-  preload.onload = () => {
-    heroImage.src = nextSrc;
-    window.requestAnimationFrame(() => {
-      heroImage.classList.remove("is-fading");
-    });
-  };
-  preload.onerror = () => {
-    heroImage.classList.remove("is-fading");
-  };
-  preload.src = nextSrc;
-
+const updateHeroThumbs = (container, imageUrls, displayIndex) => {
   container.querySelectorAll(".pd-thumb").forEach((thumb, idx) => {
-    thumb.classList.toggle("active", idx === safeIndex);
-    thumb.setAttribute("aria-pressed", idx === safeIndex ? "true" : "false");
+    thumb.classList.toggle("active", idx === displayIndex);
+    thumb.setAttribute("aria-pressed", idx === displayIndex ? "true" : "false");
   });
+};
+
+const setHeroFrame = (container, imageUrls, nextIndex) => {
+  const track = container.querySelector(".carousel-track");
+  const heroStage = container.querySelector(".pd-hero-stage");
+  if (!track) return;
+
+  const totalRealImages = imageUrls.length;
+  if (totalRealImages <= 1) return;
+
+  track.style.transition = "transform 0.5s ease-in-out";
+
+  let targetIndex = nextIndex;
+  if (targetIndex < 0) {
+    targetIndex = totalRealImages - 1;
+  }
+
+  const slideWidth = heroStage?.clientWidth || container.clientWidth;
+  track.style.transform = `translateX(-${targetIndex * slideWidth}px)`;
+  container.dataset.index = String(targetIndex);
+
+  const displayIndex = targetIndex === totalRealImages ? 0 : targetIndex;
+  updateHeroThumbs(container, imageUrls, displayIndex);
+
+  if (targetIndex === totalRealImages) {
+    container.dataset.isAnimating = "true";
+
+    window.setTimeout(() => {
+      track.style.transition = "none";
+      track.style.transform = "translateX(0px)";
+      container.dataset.index = "0";
+      track.offsetHeight;
+      container.dataset.isAnimating = "false";
+      updateHeroThumbs(container, imageUrls, 0);
+    }, 500);
+  }
+};
+
+const moveHeroCarousel = (container, imageUrls, direction) => {
+  if (container.dataset.isAnimating === "true") return;
+
+  const currentIndex = Number(container.dataset.index || "0");
+  setHeroFrame(container, imageUrls, currentIndex + direction);
 };
 
 const bindHeroGallery = () => {
@@ -70,14 +92,23 @@ const bindHeroGallery = () => {
   }
 
   const heroStage = container.querySelector(".pd-hero-stage");
-  const heroImage = container.querySelector(".pd-hero-image");
   const lightbox = detailsRoot?.querySelector(".pd-lightbox");
   const lightboxImage = lightbox?.querySelector(".pd-lightbox-image");
   const closeBtn = lightbox?.querySelector("[data-lightbox-close]");
+  let autoplayTimer = null;
+
+  const getCurrentImageSrc = () => {
+    if (!imageUrls.length) return "";
+    const currentIndex = Number(container.dataset.index || "0");
+    const safeIndex = currentIndex >= imageUrls.length ? 0 : ((currentIndex % imageUrls.length) + imageUrls.length) % imageUrls.length;
+    return imageUrls[safeIndex];
+  };
 
   const openLightbox = () => {
-    if (!heroImage || !lightbox || !lightboxImage) return;
-    lightboxImage.src = heroImage.src;
+    if (!lightbox || !lightboxImage) return;
+    const src = getCurrentImageSrc();
+    if (!src) return;
+    lightboxImage.src = src;
     lightbox.classList.add("open");
     lightbox.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
@@ -95,13 +126,12 @@ const bindHeroGallery = () => {
       const rect = heroStage.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const direction = x < rect.width / 2 ? -1 : 1;
-      const currentIndex = Number(container.dataset.index || "0");
-      updateHeroImage(container, imageUrls, currentIndex + direction);
+      moveHeroCarousel(container, imageUrls, direction);
     });
   }
 
   // Amazon-like: direct image interaction without a separate enlarge button.
-  heroImage?.addEventListener("dblclick", (event) => {
+  heroStage?.addEventListener("dblclick", (event) => {
     event.preventDefault();
     event.stopPropagation();
     openLightbox();
@@ -117,9 +147,23 @@ const bindHeroGallery = () => {
   container.querySelectorAll(".pd-thumb").forEach((thumb) => {
     thumb.addEventListener("click", () => {
       const nextIndex = Number(thumb.dataset.index || "0");
-      updateHeroImage(container, imageUrls, nextIndex);
+      setHeroFrame(container, imageUrls, nextIndex);
     });
   });
+
+  if (imageUrls.length >= 2) {
+    autoplayTimer = window.setInterval(() => {
+      if (!container.isConnected) {
+        if (autoplayTimer) {
+          window.clearInterval(autoplayTimer);
+          autoplayTimer = null;
+        }
+        return;
+      }
+
+      moveHeroCarousel(container, imageUrls, 1);
+    }, DETAILS_CAROUSEL_INTERVAL_MS);
+  }
 
   closeBtn?.addEventListener("click", closeLightbox);
 
@@ -165,7 +209,14 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
             <div class="pd-hero-stage ${hasImages ? "split-click" : ""}">
               ${
                 hasImages
-                  ? `<img class="pd-hero-image" src="${imageUrls[0]}" alt="${property.title} image" loading="lazy" />`
+                  ? `<div class="carousel-track" style="transform: translateX(0px);">
+                       ${imageUrls
+                         .map(
+                           (url) => `<img class="property-image" src="${url}" alt="${property.title} image" loading="lazy" />`
+                         )
+                         .join("")}
+                       <img class="property-image" src="${imageUrls[0]}" aria-hidden="true" loading="lazy" />
+                     </div>`
                   : `<div class="pd-hero-empty">No property images uploaded yet</div>`
               }
             </div>

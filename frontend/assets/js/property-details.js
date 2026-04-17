@@ -1,6 +1,4 @@
 const detailsRoot = document.getElementById("property-details-root");
-const DETAILS_CAROUSEL_INTERVAL_MS = 4500;
-
 const toCurrency = (amount) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -30,162 +28,108 @@ const getPropertyStatusClass = (status = "") => {
   return "available";
 };
 
-const updateHeroThumbs = (container, imageUrls, displayIndex) => {
-  container.querySelectorAll(".pd-thumb").forEach((thumb, idx) => {
-    thumb.classList.toggle("active", idx === displayIndex);
-    thumb.setAttribute("aria-pressed", idx === displayIndex ? "true" : "false");
-  });
+const resolveImageUrl = (image) => {
+  if (!image) return "";
+  if (typeof image === "string") {
+    return image.startsWith("http") ? image : `${SERVER_URL}${image}`;
+  }
+
+  const path = image.filePath || image.url || image.src;
+  if (!path) return "";
+  return path.startsWith("http") ? path : `${SERVER_URL}${path}`;
 };
 
-const setHeroFrame = (container, imageUrls, nextIndex) => {
-  const track = container.querySelector(".carousel-track");
-  const heroStage = container.querySelector(".pd-hero-stage");
+const renderDetailsSlider = (images) => {
+  if (!images || images.length === 0) {
+    return `<div class="details-slider-container" style="display:flex; align-items:center; justify-content:center; background:#f1f5f9;">
+              <span style="color:var(--muted); font-weight:600;">No Images Available</span>
+            </div>`;
+  }
+
+  if (images.length === 1) {
+    return `<div class="details-slider-container">
+              <img class="details-slide" src="${images[0]}" alt="Property View" loading="lazy" />
+            </div>`;
+  }
+
+  // Track + clone for seamless looping
+  return `
+    <div class="details-slider-container" id="property-slider" data-index="0" data-total="${images.length}" data-animating="false">
+      <div class="details-slider-track" id="slider-track" style="transform: translateX(0%);">
+        ${images.map((url) => `<img class="details-slide" src="${url}" alt="Property View" loading="lazy" />`).join("")}
+        <img class="details-slide" src="${images[0]}" aria-hidden="true" loading="lazy" />
+      </div>
+
+      <button class="slider-btn slider-prev" type="button" aria-label="Previous image">&#10094;</button>
+      <button class="slider-btn slider-next" type="button" aria-label="Next image">&#10095;</button>
+
+      <div class="details-dots" id="slider-dots">
+        ${images
+          .map((_, i) => `<div class="details-dot ${i === 0 ? "active" : ""}" data-slide-to="${i}"></div>`)
+          .join("")}
+      </div>
+    </div>
+  `;
+};
+
+const initDetailsSlider = () => {
+  const slider = document.getElementById("property-slider");
+  if (!slider) return;
+
+  const track = document.getElementById("slider-track");
   if (!track) return;
 
-  const totalRealImages = imageUrls.length;
-  if (totalRealImages <= 1) return;
+  const dots = slider.querySelectorAll(".details-dot");
+  const prevBtn = slider.querySelector(".slider-prev");
+  const nextBtn = slider.querySelector(".slider-next");
+  const totalRealImages = parseInt(slider.dataset.total || "0", 10);
 
-  track.style.transition = "transform 0.5s ease-in-out";
+  const setSlide = (targetIndex) => {
+    if (slider.dataset.animating === "true") return;
 
-  let targetIndex = nextIndex;
-  if (targetIndex < 0) {
-    targetIndex = totalRealImages - 1;
-  }
+    track.style.transition = "transform 0.5s ease-in-out";
 
-  const slideWidth = heroStage?.clientWidth || container.clientWidth;
-  track.style.transform = `translateX(-${targetIndex * slideWidth}px)`;
-  container.dataset.index = String(targetIndex);
+    let actualTransformIndex = targetIndex;
+    if (targetIndex < 0) {
+      actualTransformIndex = totalRealImages - 1;
+    }
 
-  const displayIndex = targetIndex === totalRealImages ? 0 : targetIndex;
-  updateHeroThumbs(container, imageUrls, displayIndex);
+    track.style.transform = `translateX(-${actualTransformIndex * 100}%)`;
+    slider.dataset.index = String(actualTransformIndex);
 
-  if (targetIndex === totalRealImages) {
-    container.dataset.isAnimating = "true";
-
-    window.setTimeout(() => {
-      track.style.transition = "none";
-      track.style.transform = "translateX(0px)";
-      container.dataset.index = "0";
-      track.offsetHeight;
-      container.dataset.isAnimating = "false";
-      updateHeroThumbs(container, imageUrls, 0);
-    }, 500);
-  }
-};
-
-const moveHeroCarousel = (container, imageUrls, direction) => {
-  if (container.dataset.isAnimating === "true") return;
-
-  const currentIndex = Number(container.dataset.index || "0");
-  setHeroFrame(container, imageUrls, currentIndex + direction);
-};
-
-const bindHeroGallery = () => {
-  const container = detailsRoot?.querySelector(".pd-hero-gallery");
-  if (!container) return;
-
-  let imageUrls = [];
-  try {
-    imageUrls = JSON.parse(decodeURIComponent(container.dataset.images || "%5B%5D"));
-  } catch (_error) {
-    imageUrls = [];
-  }
-
-  const heroStage = container.querySelector(".pd-hero-stage");
-  const lightbox = detailsRoot?.querySelector(".pd-lightbox");
-  const lightboxImage = lightbox?.querySelector(".pd-lightbox-image");
-  const closeBtn = lightbox?.querySelector("[data-lightbox-close]");
-  let autoplayTimer = null;
-  let isHovered = false;
-
-  const stopAutoplay = () => {
-    if (!autoplayTimer) return;
-    window.clearInterval(autoplayTimer);
-    autoplayTimer = null;
-  };
-
-  const startAutoplay = () => {
-    if (autoplayTimer || imageUrls.length < 2) return;
-
-    autoplayTimer = window.setInterval(() => {
-      if (!container.isConnected) {
-        stopAutoplay();
-        return;
-      }
-
-      if (isHovered) {
-        return;
-      }
-
-      moveHeroCarousel(container, imageUrls, 1);
-    }, DETAILS_CAROUSEL_INTERVAL_MS);
-  };
-
-  const getCurrentImageSrc = () => {
-    if (!imageUrls.length) return "";
-    const currentIndex = Number(container.dataset.index || "0");
-    const safeIndex = currentIndex >= imageUrls.length ? 0 : ((currentIndex % imageUrls.length) + imageUrls.length) % imageUrls.length;
-    return imageUrls[safeIndex];
-  };
-
-  const openLightbox = () => {
-    if (!lightbox || !lightboxImage) return;
-    const src = getCurrentImageSrc();
-    if (!src) return;
-    lightboxImage.src = src;
-    lightbox.classList.add("open");
-    lightbox.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
-  };
-
-  const closeLightbox = () => {
-    if (!lightbox) return;
-    lightbox.classList.remove("open");
-    lightbox.setAttribute("aria-hidden", "true");
-    document.body.style.overflow = "";
-  };
-
-  // Keep only double-click zoom on hero image. Single-click left/right slide navigation is disabled.
-  heroStage?.addEventListener("dblclick", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    openLightbox();
-  });
-
-  heroStage?.addEventListener("mouseenter", () => {
-    isHovered = true;
-    stopAutoplay();
-  });
-
-  heroStage?.addEventListener("mouseleave", () => {
-    isHovered = false;
-    startAutoplay();
-  });
-
-  container.querySelectorAll(".pd-thumb").forEach((thumb) => {
-    thumb.addEventListener("click", () => {
-      const nextIndex = Number(thumb.dataset.index || "0");
-      setHeroFrame(container, imageUrls, nextIndex);
-    });
-  });
-
-  startAutoplay();
-
-  closeBtn?.addEventListener("click", closeLightbox);
-
-  if (lightbox) {
-    lightbox.addEventListener("click", (event) => {
-      if (event.target === lightbox) {
-        closeLightbox();
-      }
+    const displayIndex = actualTransformIndex === totalRealImages ? 0 : actualTransformIndex;
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle("active", idx === displayIndex);
     });
 
-    window.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && lightbox.classList.contains("open")) {
-        closeLightbox();
-      }
+    if (actualTransformIndex === totalRealImages) {
+      slider.dataset.animating = "true";
+
+      window.setTimeout(() => {
+        track.style.transition = "none";
+        track.style.transform = "translateX(0%)";
+        slider.dataset.index = "0";
+        track.offsetHeight;
+        slider.dataset.animating = "false";
+      }, 500);
+    }
+  };
+
+  prevBtn?.addEventListener("click", () => {
+    setSlide(parseInt(slider.dataset.index || "0", 10) - 1);
+  });
+
+  nextBtn?.addEventListener("click", () => {
+    setSlide(parseInt(slider.dataset.index || "0", 10) + 1);
+  });
+
+  dots.forEach((dot) => {
+    dot.addEventListener("click", (event) => {
+      const target = event.currentTarget;
+      if (!(target instanceof HTMLElement)) return;
+      setSlide(parseInt(target.dataset.slideTo || "0", 10));
     });
-  }
+  });
 };
 
 const renderPropertyDetails = (property, propertyStatus = "Available") => {
@@ -195,9 +139,11 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
   const ownerId = property?.owner?._id || property?.owner?.id || property?.owner;
   const isOwner = Boolean(currentUserId) && String(ownerId) === String(currentUserId);
   const imageDocs = getImageDocuments(property);
-  const imageUrls = imageDocs.map((doc) => `${SERVER_URL}${doc.filePath}`);
+  const imageUrls = [
+    ...(Array.isArray(property.images) ? property.images.map(resolveImageUrl) : []),
+    ...imageDocs.map((doc) => `${SERVER_URL}${doc.filePath}`),
+  ].filter(Boolean);
   const hasImages = imageUrls.length > 0;
-  const encodedImages = encodeURIComponent(JSON.stringify(imageUrls));
 
   const documents = Array.isArray(property.documents) ? property.documents : [];
   const propertyDocuments = documents.filter((doc) => {
@@ -205,52 +151,32 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
     return !mime.startsWith("image/");
   });
   const ownershipHistory = Array.isArray(property.ownershipHistory) ? property.ownershipHistory : [];
+  const legalStatus = property?.approval?.status || propertyStatus || "Pending";
   const statusClass = getPropertyStatusClass(propertyStatus);
+  const canBuy = !isOwner && ["user", "buyer"].includes(currentRole);
+  const actionButtonsHtml = canBuy
+    ? `<button class="btn btn-primary" data-request-registration="${property._id}">${
+        statusClass === "sold" ? "Sold" : "Buy"
+      }</button>`
+    : isOwner
+    ? `<button class="btn btn-outline" disabled style="border-color: var(--success); color: var(--success); cursor: default;">✓ Owned by You</button>`
+    : "";
 
   detailsRoot.innerHTML = `
-    <section class="pd-layout">
-      <section class="pd-main">
-        <article class="card pd-hero-card">
-          <div class="pd-hero-gallery" ${hasImages ? `data-images="${encodedImages}" data-index="0"` : ""}>
-            <div class="pd-hero-stage ${hasImages ? "split-click" : ""}">
-              ${
-                hasImages
-                  ? `<div class="carousel-track" style="transform: translateX(0px);">
-                       ${imageUrls
-                         .map(
-                           (url) => `<img class="property-image" src="${url}" alt="${property.title} image" loading="lazy" />`
-                         )
-                         .join("")}
-                       <img class="property-image" src="${imageUrls[0]}" aria-hidden="true" loading="lazy" />
-                     </div>`
-                  : `<div class="pd-hero-empty">No property images uploaded yet</div>`
-              }
-            </div>
-            ${
-              hasImages
-                ? `<div class="pd-thumb-row">
-                    ${imageUrls
-                      .map(
-                        (url, index) => `
-                          <button class="pd-thumb ${index === 0 ? "active" : ""}" type="button" data-index="${index}" aria-pressed="${index === 0 ? "true" : "false"}">
-                            <img src="${url}" alt="Property thumbnail ${index + 1}" loading="lazy" />
-                          </button>
-                        `
-                      )
-                      .join("")}
-                  </div>`
-                : ""
-            }
-          </div>
-        </article>
+    <div class="property-details-layout">
+      <div class="property-main-content">
+        ${renderDetailsSlider(imageUrls)}
 
-        <article class="card mt-1">
-          <h3>Property Overview</h3>
-          <p class="pd-subtitle">${property.location || "Location not provided"} • ${property.type || "Property type not provided"}</p>
-          <p>This official record includes document references, chain of title history, and timeline of ownership activity for this property.</p>
-        </article>
+        <div class="property-header">
+          <h1>${property.title}</h1>
+          <p class="property-location-copy">📍 ${property.location || "Location not provided"}</p>
+          <h3>About this Property</h3>
+          <p class="property-description">
+            ${property.description || "No specific description has been provided for this asset."}
+          </p>
+        </div>
 
-        <article class="card mt-1">
+        <article class="card property-documents">
           <h3>Documents</h3>
           <div class="pd-doc-grid">
             ${
@@ -278,44 +204,8 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
             }
           </div>
         </article>
-      </section>
 
-      ${
-        hasImages
-          ? `<div class="pd-lightbox" aria-hidden="true">
-               <button class="pd-lightbox-close" type="button" data-lightbox-close aria-label="Close enlarged view">×</button>
-               <img class="pd-lightbox-image" src="" alt="Enlarged property view" />
-             </div>`
-          : ""
-      }
-
-      <aside class="pd-sidebar">
-        <article class="card">
-          <h3>Property Overview</h3>
-          <p><span class="badge ${statusClass}">${propertyStatus}</span></p>
-          <div class="pd-action-row">
-            ${
-              ["user", "buyer"].includes(currentRole) && !isOwner
-                ? `<button class="btn btn-primary" data-request-registration="${property._id}">Request Registration</button>`
-                : ""
-            }
-            ${
-              ["user", "buyer"].includes(currentRole) && isOwner
-                ? `<button class="btn btn-outline" disabled style="border-color: var(--success); color: var(--success); cursor: default;">✓ Owned by You</button>`
-                : ""
-            }
-          </div>
-          <p class="pd-price">${toCurrency(property.price)}</p>
-          <ul class="pd-facts">
-            <li><span>Area</span><strong>${property.area || "N/A"} sq.ft</strong></li>
-            <li><span>Location</span><strong>${property.location || "N/A"}</strong></li>
-            <li><span>Type</span><strong>${property.type || "N/A"}</strong></li>
-            <li><span>Current Owner</span><strong>${property.owner?.fullName || "N/A"}</strong></li>
-            <li><span>Title</span><strong>${property.title || "N/A"}</strong></li>
-          </ul>
-        </article>
-
-        <article class="card mt-1">
+        <article class="card property-history">
           <h3>Ownership History</h3>
           <div class="pd-timeline">
             ${
@@ -335,11 +225,90 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
             }
           </div>
         </article>
+      </div>
+
+      <aside class="property-sidebar">
+        <div class="sticky-sidebar">
+          <div class="sidebar-price">${toCurrency(property.price)}</div>
+
+          <div class="sidebar-meta">
+            <div class="sidebar-meta-item">
+              <span>Property Type</span>
+              <strong>${property.type || "Land Asset"}</strong>
+            </div>
+            <div class="sidebar-meta-item">
+              <span>Area Size</span>
+              <strong>${property.area ? `${property.area} Sq Ft` : "Size N/A"}</strong>
+            </div>
+            <div class="sidebar-meta-item">
+              <span>Current Owner</span>
+              <strong>${property.owner?.fullName || "Private"}</strong>
+            </div>
+            <div class="sidebar-meta-item" style="border-bottom: none;">
+              <span>Legal Status</span>
+              <strong style="color: ${legalStatus === "Approved" ? "var(--success)" : "inherit"};">
+                ${legalStatus === "Approved" ? "✓ Verified" : legalStatus}
+              </strong>
+            </div>
+          </div>
+
+          <div class="sidebar-actions">
+            ${actionButtonsHtml}
+          </div>
+        </div>
       </aside>
-    </section>
+    </div>
+
+    ${
+      hasImages
+        ? `<div class="pd-lightbox" aria-hidden="true">
+             <button class="pd-lightbox-close" type="button" data-lightbox-close aria-label="Close enlarged view">×</button>
+             <img class="pd-lightbox-image" src="" alt="Enlarged property view" />
+           </div>`
+        : ""
+    }
   `;
 
-  bindHeroGallery();
+  initDetailsSlider();
+
+  const lightbox = detailsRoot.querySelector(".pd-lightbox");
+  const lightboxImage = lightbox?.querySelector(".pd-lightbox-image");
+  const closeBtn = lightbox?.querySelector("[data-lightbox-close]");
+
+  const openLightbox = (src) => {
+    if (!lightbox || !lightboxImage || !src) return;
+    lightboxImage.src = src;
+    lightbox.classList.add("open");
+    lightbox.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeLightbox = () => {
+    if (!lightbox) return;
+    lightbox.classList.remove("open");
+    lightbox.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  };
+
+  detailsRoot.querySelectorAll(".details-slide").forEach((image) => {
+    image.addEventListener("click", () => openLightbox(image.src));
+  });
+
+  closeBtn?.addEventListener("click", closeLightbox);
+
+  if (lightbox) {
+    lightbox.addEventListener("click", (event) => {
+      if (event.target === lightbox) {
+        closeLightbox();
+      }
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && lightbox.classList.contains("open")) {
+        closeLightbox();
+      }
+    });
+  }
 
   detailsRoot.querySelectorAll("[data-request-registration]").forEach((button) => {
     button.addEventListener("click", async () => {

@@ -6,6 +6,12 @@
 /* 2. Layout */
 @import url("./layout/grid.css");
 @import url("./layout/navbar.css");
+@import url("./layout/dashboard.css");
+@import url("./layout/landing.css");
+@import url("./layout/property-details.css");
+@import url("./layout/properties.css");
+@import url("./layout/requests.css");
+@import url("./layout/register.css");
 @import url("./layout/footer.css");
 
 /* 3. Components */

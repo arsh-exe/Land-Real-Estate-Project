@@ -1,41 +1,168 @@
-const pendingRequestsRoot = document.getElementById("requests-pending-root");
-const approvedRequestsRoot = document.getElementById("requests-approved-root");
-const rejectedRequestsRoot = document.getElementById("requests-rejected-root");
-const transactionsRoot = document.getElementById("transactions-root");
-const propertyApprovalsRoot = document.getElementById("property-approvals-root");
-let transactionSwiper = null;
+const requestsRoot = document.getElementById("requests-root");
 
-const openRequestedSection = () => {
-  const params = new URLSearchParams(window.location.search);
-  const section = String(params.get("section") || "").trim().toLowerCase();
-  const verifyMode = String(params.get("verify") || "").trim() === "1";
-  if (!section && !verifyMode) return;
+const toTitle = (value = "") =>
+  String(value || "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 
-  const sections = {
-    "property-approvals": document.getElementById("section-property-approvals"),
-    pending: document.getElementById("section-pending"),
-    approved: document.getElementById("section-approved"),
-    rejected: document.getElementById("section-rejected"),
-    transactions: document.getElementById("section-transactions"),
-  };
-
-  const activeSection = sections[section];
-  if (activeSection) {
-    activeSection.open = true;
-    activeSection.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  if (verifyMode) {
-    const approvalSection = document.getElementById("section-property-approvals");
-    if (approvalSection) {
-      approvalSection.open = true;
-      approvalSection.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
+const fmtDate = (value) => {
+  const date = new Date(value || Date.now());
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
-const bindPropertyApprovalActions = () => {
-  document.querySelectorAll("[data-property-approval-action]").forEach((button) => {
+const getQuerySection = () => String(new URLSearchParams(window.location.search).get("section") || "").trim().toLowerCase();
+
+const pendingTag = (request) => {
+  const sellerStatus = String(request?.sellerDecision?.status || "Pending").toLowerCase();
+  const finalStatus = String(request?.finalStatus || "Pending").toLowerCase();
+
+  if (finalStatus === "pending" && sellerStatus === "pending") {
+    return { label: "In Review", className: "in-review" };
+  }
+
+  if (finalStatus === "pending" && sellerStatus === "approved") {
+    return { label: "Awaiting Docs", className: "awaiting-docs" };
+  }
+
+  return { label: "Pending", className: "in-review" };
+};
+
+const canSellerAct = (role, request, userId) => {
+  const sellerId = request?.seller?._id || request?.seller;
+  return ["user", "seller"].includes(role) && String(sellerId) === String(userId) && request?.sellerDecision?.status === "Pending";
+};
+
+const canOfficerAct = (role, request) =>
+  ["admin", "government officer"].includes(role) &&
+  request?.sellerDecision?.status === "Approved" &&
+  request?.finalStatus === "Pending";
+
+const getRequestProgress = (request) => {
+  const sellerStatus = String(request?.sellerDecision?.status || "Pending").toLowerCase();
+  const finalStatus = String(request?.finalStatus || "Pending").toLowerCase();
+
+  const steps = [
+    { label: "Requested", state: "completed" },
+    { label: "Seller", state: "pending" },
+    { label: "Govt", state: "pending" },
+    { label: "Final", state: "pending" },
+  ];
+
+  let progress = 12;
+
+  if (sellerStatus === "pending") {
+    steps[1].state = "active";
+    progress = 30;
+  } else if (sellerStatus === "approved") {
+    steps[1].state = "completed";
+    progress = 52;
+
+    if (finalStatus === "pending") {
+      steps[2].state = "active";
+      progress = 72;
+    } else if (finalStatus === "approved") {
+      steps[2].state = "completed";
+      steps[3].state = "completed";
+      progress = 100;
+    } else if (finalStatus === "rejected") {
+      steps[2].state = "rejected";
+      steps[3].state = "rejected";
+      progress = 100;
+    }
+  } else if (sellerStatus === "rejected") {
+    steps[1].state = "rejected";
+    steps[3].state = "rejected";
+    progress = 100;
+  }
+
+  return { steps, progress };
+};
+
+const renderRequestProgress = (request) => {
+  const { steps, progress } = getRequestProgress(request);
+
+  return `
+    <div class="rw-progress" aria-label="Request progress">
+      <div class="rw-progress-track">
+        <span class="rw-progress-fill" style="width:${progress}%;"></span>
+      </div>
+      <div class="rw-progress-steps">
+        ${steps
+          .map(
+            (step) => `
+              <span class="rw-step ${step.state}">
+                <span class="rw-step-dot"></span>
+                <span class="rw-step-label">${step.label}</span>
+              </span>
+            `
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+};
+
+const renderRequestActions = (request, role, userId) => {
+  let html = `<a class="btn btn-outline btn-sm" href="/pages/property-details.html?id=${request.property?._id || ""}">Details</a>`;
+
+  if (canSellerAct(role, request, userId)) {
+    html += `
+      <button class="btn btn-primary btn-sm" data-action="seller" data-status="Approved" data-id="${request._id}">Action</button>
+      <button class="btn btn-outline btn-sm" data-action="seller" data-status="Rejected" data-id="${request._id}">Reject</button>
+    `;
+  } else if (canOfficerAct(role, request)) {
+    html += `
+      <button class="btn btn-primary btn-sm" data-action="officer" data-status="Approved" data-id="${request._id}">Verify</button>
+      <button class="btn btn-outline btn-sm" data-action="officer" data-status="Rejected" data-id="${request._id}">Reject</button>
+    `;
+  }
+
+  return html;
+};
+
+const bindWorkflowActions = () => {
+  requestsRoot.querySelectorAll("[data-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const id = button.dataset.id;
+      const action = button.dataset.action;
+      const status = button.dataset.status;
+
+      const endpoint = action === "seller" ? `/registrations/${id}/seller-decision` : `/registrations/${id}/officer-decision`;
+
+      try {
+        await apiRequest(endpoint, {
+          method: "PATCH",
+          body: JSON.stringify({ status, note: "" }),
+        });
+        showToast(`Request ${status.toLowerCase()} successfully`, "success");
+        await loadRequestsWorkflow();
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    });
+  });
+
+  requestsRoot.querySelectorAll("[data-certificate]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await apiRequest(`/certificates/${button.dataset.certificate}`, { method: "POST" });
+        showToast("Certificate generated successfully", "success");
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    });
+  });
+
+  requestsRoot.querySelectorAll("[data-property-approval-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       const status = button.dataset.propertyApprovalAction;
       const id = button.dataset.propertyApprovalId;
@@ -47,7 +174,7 @@ const bindPropertyApprovalActions = () => {
           body: JSON.stringify({ status, note }),
         });
         showToast(`Property ${status.toLowerCase()} successfully`, "success");
-        await loadPropertyApprovals();
+        await loadRequestsWorkflow();
       } catch (error) {
         showToast(error.message, "error");
       }
@@ -55,438 +182,306 @@ const bindPropertyApprovalActions = () => {
   });
 };
 
-const renderPropertyApprovalList = (properties = []) => {
-  if (!propertyApprovalsRoot) return;
+const renderWorkflow = ({ role, userId, registrations, transactions, pendingProperties }) => {
+  const section = getQuerySection();
 
-  if (!properties.length) {
-    propertyApprovalsRoot.innerHTML = "<p>No pending property approvals.</p>";
-    return;
-  }
+  const pending = registrations
+    .filter((item) => String(item.finalStatus || "Pending").toLowerCase() === "pending")
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-  propertyApprovalsRoot.innerHTML = properties
-    .map(
-      (property) => `
-        <article class="request-item" data-property-id="${property._id}">
-          <div style="display:flex; justify-content:space-between; align-items:start; gap:0.5rem;">
-            <h3 style="margin:0;">${property.title || "Untitled property"}</h3>
-            <span class="badge pending">Pending</span>
-          </div>
-          <div style="margin: 1rem 0;">
-            <p><strong>Owner:</strong> ${property.owner?.fullName || "N/A"}</p>
-            <p><strong>Location:</strong> ${property.location || "N/A"}</p>
-            <p><strong>Type:</strong> ${property.type || "N/A"}</p>
-            <p><strong>Price:</strong> ₹${Number(property.price || 0).toLocaleString("en-IN")}</p>
-          </div>
-          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
-            <a href="/pages/property-details.html?id=${property._id}" class="btn btn-outline">View Details</a>
-            <button class="btn btn-primary" data-property-approval-action="Approved" data-property-approval-id="${property._id}">Approve Property</button>
-            <button class="btn btn-danger" data-property-approval-action="Rejected" data-property-approval-id="${property._id}">Reject Property</button>
-          </div>
-        </article>
-      `
-    )
-    .join("");
+  const approved = registrations
+    .filter((item) => String(item.finalStatus || "Pending").toLowerCase() === "approved")
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
 
-  bindPropertyApprovalActions();
-  bindRequestCardNavigation();
-};
+  const rejected = registrations
+    .filter((item) => String(item.finalStatus || "Pending").toLowerCase() === "rejected")
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
 
-const loadPropertyApprovals = async () => {
-  const section = document.getElementById("section-property-approvals");
-  const role = roleKey(getUser()?.role);
-  const canVerifyProperties = ["admin", "government officer"].includes(role);
+  const total = registrations.length;
+  const approvedCount = approved.length;
+  const rejectedCount = rejected.length;
 
-  if (!canVerifyProperties) {
-    section?.classList.add("hidden");
-    return;
-  }
+  const prioritySource = section === "approved" ? approved : section === "rejected" ? rejected : pending;
+  const priorityCards = prioritySource.slice(0, 2);
 
-  section?.classList.remove("hidden");
-  if (!propertyApprovalsRoot) return;
+  const approvalFeed = approved.slice(0, 3);
+  const rejectedFeed = rejected.slice(0, 4);
+  const txFeed = (transactions || []).slice(0, 5);
+  const timelineFeed = registrations
+    .slice()
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
+    .slice(0, 6);
 
-  propertyApprovalsRoot.innerHTML = `
-    <article class="request-item skeleton" style="border: none; box-shadow: none;">
-      <div class="skeleton-title"></div>
-      <div class="skeleton-text"></div>
-      <div class="skeleton-text short"></div>
-    </article>
-  `;
-
-  try {
-    const { properties } = await apiRequest("/properties/pending-approvals");
-    renderPropertyApprovalList(properties || []);
-  } catch (error) {
-    propertyApprovalsRoot.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
-    showToast(error.message, "error");
-  }
-};
-
-const bindCollapsibleCards = () => {
-  document.querySelectorAll(".collapsible-card").forEach((card) => {
-    card.addEventListener("click", (event) => {
-      const clickedSummary = event.target.closest("summary");
-      const clickedInteractive = event.target.closest("a, button, input, select, textarea, label");
-
-      // Keep native summary toggle behavior and ignore interactive controls.
-      if (clickedSummary || clickedInteractive) return;
-
-      // When collapsed, clicking anywhere on the card opens it.
-      if (!card.open) {
-        card.open = true;
-      }
-    });
-  });
-};
-
-const makeBadge = (status) => `<span class="badge ${String(status).toLowerCase()}">${status}</span>`;
-
-const actionButtons = (request, role, currentUserId) => {
-  let buttons = "";
-
-  // Verify the current user is the seller for this specific request.
-  const sellerId = request.seller?._id || request.seller;
-  const isSeller = String(sellerId) === String(currentUserId);
-
-  if (["user", "seller"].includes(role) && isSeller && request.sellerDecision?.status === "Pending") {
-    buttons += `
-      <button class="btn btn-primary" data-action="seller" data-status="Approved" data-id="${request._id}">Approve</button>
-      <button class="btn btn-danger" data-action="seller" data-status="Rejected" data-id="${request._id}">Reject</button>
-    `;
-  }
-
-  if (
-    ["admin", "government officer"].includes(role) &&
-    request.sellerDecision?.status === "Approved" &&
-    request.finalStatus === "Pending"
-  ) {
-    buttons += `
-      <button class="btn btn-primary" data-action="officer" data-status="Approved" data-id="${request._id}">Verify & Approve</button>
-      <button class="btn btn-danger" data-action="officer" data-status="Rejected" data-id="${request._id}">Reject</button>
-    `;
-  }
-
-  if (
-    ["admin", "government officer"].includes(role) &&
-    request.finalStatus === "Approved"
-  ) {
-    buttons += `
-      <button class="btn btn-outline" data-certificate="${request._id}">Generate Certificate</button>
-    `;
-  }
-
-  return buttons;
-};
-
-const finalStatusBadge = (status) => `<span class="badge ${String(status || "Pending").toLowerCase()}">${status || "Pending"}</span>`;
-
-const renderTimeline = (request) => {
-  const sellerStatus = request.sellerDecision?.status || "Pending";
-  const finalStatus = request.finalStatus || "Pending";
-
-  const steps = [
-    { label: "Request Sent", status: "completed" },
-    {
-      label: "Seller Review",
-      status:
-        sellerStatus === "Approved"
-          ? "completed"
-          : sellerStatus === "Rejected"
-            ? "rejected"
-            : "active",
-    },
-    {
-      label: "Gov Verification",
-      status:
-        finalStatus === "Approved"
-          ? "completed"
-          : finalStatus === "Rejected"
-            ? "rejected"
-            : sellerStatus === "Approved"
-              ? "active"
-              : "pending",
-    },
+  const sideLinks = [
+    { key: "pending", label: "Pending Requests", active: section !== "approved" && section !== "rejected" },
+    { key: "approved", label: "Approved Titles", active: section === "approved" },
+    { key: "rejected", label: "Rejected Filings", active: section === "rejected" },
+    { key: "transactions", label: "Transaction Vault", active: section === "transactions" },
   ];
 
-  return `
-    <div class="status-timeline">
-      ${steps
-        .map(
-          (step) => `
-            <div class="timeline-step ${step.status}">
-              <div class="step-icon">${step.status === "completed" ? "✓" : step.status === "rejected" ? "✕" : ""}</div>
-              <div class="step-label">${step.label}</div>
-            </div>
-          `
-        )
-        .join("")}
-    </div>
-  `;
-};
+  const propertyApprovalCards = ["admin", "government officer"].includes(role)
+    ? (pendingProperties || []).slice(0, 2)
+    : [];
 
-const bindRequestActions = () => {
-  document.querySelectorAll("[data-action]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const id = button.dataset.id;
-      const action = button.dataset.action;
-      const status = button.dataset.status;
-      const note = "";
+  requestsRoot.innerHTML = `
+    <section class="rw-shell">
+      <aside class="rw-side">
+        <div>
+          <h3>Land Registry</h3>
+          <p>Official Portal</p>
+        </div>
 
-      const endpoint =
-        action === "seller"
-          ? `/registrations/${id}/seller-decision`
-          : `/registrations/${id}/officer-decision`;
+        <a class="btn btn-primary rw-new-btn" href="/pages/properties?view=add">New Registration</a>
 
-      try {
-        await apiRequest(endpoint, {
-          method: "PATCH",
-          body: JSON.stringify({ status, note }),
-        });
-        showToast(`Request ${status.toLowerCase()} successfully`, "success");
-        await loadRequests();
-      } catch (error) {
-        showToast(error.message, "error");
-      }
-    });
-  });
+        <nav class="rw-nav" aria-label="Request page navigation">
+          ${sideLinks
+            .map(
+              (item) =>
+                `<a class="${item.active ? "active" : ""}" href="/pages/requests.html${item.key !== "pending" ? `?section=${item.key}` : ""}"><span>◈</span>${item.label}</a>`
+            )
+            .join("")}
+        </nav>
 
-  document.querySelectorAll("[data-certificate]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      try {
-        const data = await apiRequest(`/certificates/${button.dataset.certificate}`, {
-          method: "POST",
-        });
-        showToast(`Certificate created: ${data.certificate.filePath}`, "success");
-      } catch (error) {
-        showToast(error.message, "error");
-      }
-    });
-  });
-};
+        <div class="rw-support">
+          <a href="#">Support</a>
+          <a href="#">Legal Documentation</a>
+        </div>
+      </aside>
 
-const bindRequestCardNavigation = () => {
-  document.querySelectorAll(".request-item[data-property-id]").forEach((card) => {
-    card.classList.add("request-clickable");
-    card.addEventListener("click", (event) => {
-      if (event.target.closest("a") || event.target.closest("button") || event.target.closest("input")) {
-        return;
-      }
+      <section class="rw-center">
+        <header class="rw-header">
+          <div>
+            <h1>Registration Workflow</h1>
+            <p>Manage and process active land registrations, title transfers, and historical transactions.</p>
+          </div>
+          <button class="btn btn-outline rw-filter-btn" type="button" disabled>Filter Views</button>
+        </header>
 
-      const propertyId = card.dataset.propertyId;
-      if (!propertyId) return;
-      window.location.href = `/pages/property-details.html?id=${propertyId}`;
-    });
-  });
-};
-
-const destroyTransactionSwiper = () => {
-  if (transactionSwiper && typeof transactionSwiper.destroy === "function") {
-    transactionSwiper.destroy(true, true);
-  }
-  transactionSwiper = null;
-};
-
-const initTransactionSwiper = () => {
-  const swiperRoot = document.querySelector(".txn-swiper");
-  if (!swiperRoot || typeof Swiper === "undefined") return;
-
-  destroyTransactionSwiper();
-
-  transactionSwiper = new Swiper(".txn-swiper", {
-    loop: true,
-    centeredSlides: true,
-    spaceBetween: 24,
-    autoplay: {
-      delay: 2500,
-      disableOnInteraction: false,
-      pauseOnMouseEnter: true,
-    },
-    pagination: {
-      el: ".txn-swiper .swiper-pagination",
-      clickable: true,
-    },
-    navigation: {
-      nextEl: ".txn-swiper .swiper-button-next",
-      prevEl: ".txn-swiper .swiper-button-prev",
-    },
-    breakpoints: {
-      0: {
-        slidesPerView: 1,
-      },
-      720: {
-        slidesPerView: 2,
-      },
-      1100: {
-        slidesPerView: 2.6,
-      },
-    },
-  });
-};
-
-const renderRequestList = (root, requests, role, emptyMessage) => {
-  if (!root) return;
-
-  const currentUser = getUser();
-  const currentUserId = currentUser?._id || currentUser?.id;
-
-  root.innerHTML = (requests || [])
-    .map((request) => {
-      const sellerId = request.seller?._id || request.seller;
-      const isSeller = String(sellerId) === String(currentUserId);
-      const roleBadge = role === "user"
-        ? isSeller
-          ? '<span class="badge" style="background:#fff3cd;color:#856404;border:1px solid #ffeeba;">Selling</span>'
-          : '<span class="badge" style="background:#d1ecf1;color:#0c5460;border:1px solid #bee5eb;">Buying</span>'
-        : "";
-
-      return `
-        <article class="request-item" data-property-id="${request.property?._id || ""}">
-          <div style="display:flex; justify-content:space-between; align-items:start; gap:0.5rem;">
-            <div style="display:flex; align-items:center; gap:0.75rem;">
-              <h3 style="margin:0;">${request.registrationId}</h3>
-              ${roleBadge}
-            </div>
-            ${finalStatusBadge(request.finalStatus || "Pending")}
+        <article class="rw-panel">
+          <div class="rw-panel-title">
+            <h2>Priority Pending</h2>
+            <a href="/pages/requests.html">View All -></a>
           </div>
 
-          <div style="margin: 1rem 0;">
-            <p><strong>Property:</strong> ${request.property?.title || "N/A"}</p>
-            <p><strong>Buyer:</strong> ${request.buyer?.fullName || "N/A"}</p>
-            <p><strong>Seller:</strong> ${request.seller?.fullName || "N/A"}</p>
-          </div>
+          <div class="rw-priority-grid">
+            ${
+              priorityCards.length
+                ? priorityCards
+                    .map((request) => {
+                      const tag = pendingTag(request);
+                      return `
+                        <article class="rw-priority-card ${tag.className}">
+                          <p class="rw-request-id">${request.registrationId || "REG-REQUEST"}</p>
+                          <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-top:0.2rem;">
+                            <p class="rw-request-title">${request.property?.title || "Property"}</p>
+                            <span class="rw-pill ${tag.className}">${tag.label}</span>
+                          </div>
+                          <p class="rw-request-meta">Buyer: ${request.buyer?.fullName || "N/A"}</p>
+                          <p class="rw-request-meta">Seller: ${request.seller?.fullName || "N/A"}</p>
+                          ${renderRequestProgress(request)}
+                          <div class="rw-request-actions">
+                            ${renderRequestActions(request, role, userId)}
+                          </div>
+                        </article>
+                      `;
+                    })
+                    .join("")
+                : `<p class="rw-empty">No priority requests available.</p>`
+            }
 
-          ${renderTimeline(request)}
-
-          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
-            ${actionButtons(request, role, currentUserId)}
+            ${
+              propertyApprovalCards.length
+                ? propertyApprovalCards
+                    .map(
+                      (property) => `
+                        <article class="rw-priority-card awaiting-docs">
+                          <p class="rw-request-id">PROPERTY REVIEW</p>
+                          <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-top:0.2rem;">
+                            <p class="rw-request-title">${property.title || "Untitled Property"}</p>
+                            <span class="rw-pill awaiting-docs">Awaiting Docs</span>
+                          </div>
+                          <p class="rw-request-meta">Owner: ${property.owner?.fullName || "N/A"}</p>
+                          <p class="rw-request-meta">Location: ${property.location || "N/A"}</p>
+                          <div class="rw-request-actions">
+                            <a class="btn btn-outline btn-sm" href="/pages/property-details.html?id=${property._id}">Details</a>
+                            <button class="btn btn-primary btn-sm" data-property-approval-action="Approved" data-property-approval-id="${property._id}">Approve</button>
+                            <button class="btn btn-outline btn-sm" data-property-approval-action="Rejected" data-property-approval-id="${property._id}">Reject</button>
+                          </div>
+                        </article>
+                      `
+                    )
+                    .join("")
+                : ""
+            }
           </div>
         </article>
-      `;
-    })
-    .join("");
 
-  if (!requests.length) {
-    root.innerHTML = `<p>${emptyMessage}</p>`;
-  }
+        <article class="rw-panel">
+          <div class="rw-panel-title">
+            <h2>Recent Approvals</h2>
+          </div>
+
+          <div class="rw-approval-list">
+            ${
+              approvalFeed.length
+                ? approvalFeed
+                    .map(
+                      (request) => `
+                        <article class="rw-approval-item">
+                          <div>
+                            <p class="rw-approval-title">${request.property?.title || "Approved Property"}</p>
+                            <p class="rw-approval-meta">ID: ${request.registrationId || "N/A"} • Approved: ${fmtDate(
+                        request.updatedAt || request.createdAt
+                      )}</p>
+                          </div>
+                          ${
+                            ["admin", "government officer"].includes(role)
+                              ? `<button class="btn btn-outline btn-sm" data-certificate="${request._id}">View Certificate</button>`
+                              : `<a href="/pages/property-details.html?id=${request.property?._id || ""}">View Details</a>`
+                          }
+                        </article>
+                      `
+                    )
+                    .join("")
+                : `<p class="rw-empty">No approved requests found.</p>`
+            }
+          </div>
+        </article>
+
+        <article class="rw-panel">
+          <div class="rw-panel-title">
+            <h2>Rejected Filings</h2>
+            <a href="/pages/requests.html?section=rejected">View All -></a>
+          </div>
+
+          <div class="rw-approval-list">
+            ${
+              rejectedFeed.length
+                ? rejectedFeed
+                    .map(
+                      (request) => `
+                        <article class="rw-approval-item rw-rejected-item">
+                          <div>
+                            <p class="rw-approval-title">${request.property?.title || "Rejected Filing"}</p>
+                            <p class="rw-approval-meta">ID: ${request.registrationId || "N/A"} • Rejected: ${fmtDate(
+                        request.updatedAt || request.createdAt
+                      )}</p>
+                          </div>
+                          <a href="/pages/property-details.html?id=${request.property?._id || ""}">View Details</a>
+                        </article>
+                      `
+                    )
+                    .join("")
+                : `<p class="rw-empty">No rejected filings found.</p>`
+            }
+          </div>
+        </article>
+
+        <article class="rw-panel">
+          <div class="rw-panel-title">
+            <h2>Decision Timeline</h2>
+          </div>
+
+          <div class="rw-timeline">
+            ${
+              timelineFeed.length
+                ? timelineFeed
+                    .map((request) => {
+                      const state = String(request.finalStatus || "Pending").toLowerCase();
+                      const statusClass = state === "approved" ? "approved" : state === "rejected" ? "rejected" : "pending";
+                      return `
+                        <article class="rw-timeline-item ${statusClass}">
+                          <div>
+                            <p class="rw-timeline-title">${request.registrationId || "REG-REQUEST"} • ${
+                        request.property?.title || "Property"
+                      }</p>
+                            <p class="rw-timeline-time">${fmtDate(request.updatedAt || request.createdAt)}</p>
+                          </div>
+                          <span class="badge ${statusClass}">${toTitle(state)}</span>
+                        </article>
+                      `;
+                    })
+                    .join("")
+                : `<p class="rw-empty">No timeline events available.</p>`
+            }
+          </div>
+        </article>
+      </section>
+
+      <aside class="rw-right">
+        <article class="rw-right-card rw-volume">
+          <h3>Weekly Volume</h3>
+          <p class="rw-volume-big">${total}</p>
+          <p class="rw-volume-sub">Registrations in current workflow</p>
+          <div class="rw-volume-stats">
+            <div><span>Approved</span><strong>${approvedCount}</strong></div>
+            <div><span>Rejected</span><strong>${rejectedCount}</strong></div>
+          </div>
+        </article>
+
+        <article class="rw-right-card">
+          <h3 class="rw-tx-title">Recent Transactions</h3>
+          <div class="rw-tx-list">
+            ${
+              txFeed.length
+                ? txFeed
+                    .map(
+                      (tx) => `
+                        <article class="rw-tx-item">
+                          <p class="rw-tx-head">${toTitle(tx.status || "Transaction")}</p>
+                          <p class="rw-tx-sub">${tx.transactionId || "TX-ID"} • ${tx.property?.title || "Property"}</p>
+                          <p class="rw-tx-time">${fmtDate(tx.createdAt)}</p>
+                        </article>
+                      `
+                    )
+                    .join("")
+                : `<p class="rw-empty">No transaction records available.</p>`
+            }
+          </div>
+          <button class="btn btn-outline btn-sm" type="button" style="margin-top:0.7rem; width:100%;" disabled>View Full Audit Log</button>
+        </article>
+      </aside>
+    </section>
+  `;
+
+  bindWorkflowActions();
 };
 
-const loadRequests = async () => {
-  if (!pendingRequestsRoot || !approvedRequestsRoot || !rejectedRequestsRoot) return;
+const loadRequestsWorkflow = async () => {
+  if (!requestsRoot) return;
 
-  // Show skeleton loading state
-  const skeletonMarkup = Array(2).fill(`
-    <article class="request-item skeleton" style="border: none; box-shadow: none;">
-      <div class="skeleton-title"></div>
-      <div class="skeleton-text"></div>
-      <div class="skeleton-text"></div>
-      <div class="skeleton-text short"></div>
-      <div style="display:flex; gap:0.5rem; margin-top:1rem;">
-        <div class="skeleton-text" style="width: 100px; height: 36px; border-radius: 8px;"></div>
-        <div class="skeleton-text" style="width: 100px; height: 36px; border-radius: 8px;"></div>
-      </div>
-    </article>
-  `).join("");
-
-  pendingRequestsRoot.innerHTML = skeletonMarkup;
-  approvedRequestsRoot.innerHTML = skeletonMarkup;
-  rejectedRequestsRoot.innerHTML = skeletonMarkup;
-
-  try {
-    const role = roleKey(getUser()?.role);
-    const { registrations } = await apiRequest("/registrations");
-    const allRegistrations = registrations || [];
-    const pendingRequests = allRegistrations.filter((request) => {
-      const status = String(request.finalStatus || "Pending").toLowerCase();
-      return status === "pending";
-    });
-    const approvedRequests = allRegistrations.filter((request) => {
-      const status = String(request.finalStatus || "Pending").toLowerCase();
-      return status === "approved";
-    });
-    const rejectedRequests = allRegistrations.filter((request) => {
-      const status = String(request.finalStatus || "Pending").toLowerCase();
-      return status === "rejected";
-    });
-
-    renderRequestList(pendingRequestsRoot, pendingRequests, role, "No pending requests found.");
-    renderRequestList(approvedRequestsRoot, approvedRequests, role, "No approved requests found.");
-    renderRequestList(rejectedRequestsRoot, rejectedRequests, role, "No rejected requests found.");
-
-    bindRequestActions();
-    bindRequestCardNavigation();
-  } catch (error) {
-    const errorMarkup = `<p style="color:var(--danger);">${error.message}</p>`;
-    pendingRequestsRoot.innerHTML = errorMarkup;
-    approvedRequestsRoot.innerHTML = errorMarkup;
-    rejectedRequestsRoot.innerHTML = errorMarkup;
-    showToast(error.message, "error");
-  }
-};
-
-const loadTransactions = async () => {
-  if (!transactionsRoot) return;
-
-  destroyTransactionSwiper();
-
-  // Show skeleton loading state
-  transactionsRoot.innerHTML = `
-    <div class="txn-swiper swiper">
-      <div class="swiper-wrapper">
-        ${Array(3)
-          .fill(`
-            <article class="txn-item skeleton txn-carousel-item swiper-slide">
-              <div class="skeleton-text short"></div>
-              <div class="skeleton-title" style="margin-top: 0.5rem;"></div>
-            </article>
-          `)
-          .join("")}
-      </div>
-      <div class="swiper-button-prev"></div>
-      <div class="swiper-button-next"></div>
-      <div class="swiper-pagination"></div>
-    </div>
+  requestsRoot.innerHTML = `
+    <section class="rw-shell">
+      <article class="card skeleton" style="height: 520px; border:none; box-shadow:none;"></article>
+      <article class="card skeleton" style="height: 520px; border:none; box-shadow:none;"></article>
+      <article class="card skeleton" style="height: 520px; border:none; box-shadow:none;"></article>
+    </section>
   `;
 
   try {
-    const { transactions } = await apiRequest("/transactions");
-    const transactionItems = (transactions || [])
-      .map(
-        (item) => `
-          <article class="txn-item txn-carousel-item swiper-slide">
-            <strong>${item.transactionId}</strong>
-            <p>${item.property?.title || "Property"}</p>
-            <p>${makeBadge(item.status)}</p>
-          </article>
-        `
-      )
-      .join("");
+    const user = getUser();
+    const role = roleKey(user?.role);
+    const userId = user?._id || user?.id;
 
-    if (!transactions.length) {
-      transactionsRoot.innerHTML = "<p>No transactions available.</p>";
-      return;
-    }
+    const [registrationData, transactionData, propertyApprovalData] = await Promise.all([
+      apiRequest("/registrations"),
+      apiRequest("/transactions").catch(() => ({ transactions: [] })),
+      ["admin", "government officer"].includes(role)
+        ? apiRequest("/properties/pending-approvals").catch(() => ({ properties: [] }))
+        : Promise.resolve({ properties: [] }),
+    ]);
 
-    transactionsRoot.innerHTML = `
-      <div class="txn-swiper swiper">
-        <div class="swiper-wrapper">
-          ${transactionItems}
-        </div>
-        <div class="swiper-button-prev"></div>
-        <div class="swiper-button-next"></div>
-        <div class="swiper-pagination"></div>
-      </div>
-    `;
-
-    initTransactionSwiper();
+    renderWorkflow({
+      role,
+      userId,
+      registrations: registrationData?.registrations || [],
+      transactions: transactionData?.transactions || [],
+      pendingProperties: propertyApprovalData?.properties || [],
+    });
   } catch (error) {
-    transactionsRoot.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
+    requestsRoot.innerHTML = `<p style="color:var(--danger); padding:1rem;">${error.message}</p>`;
     showToast(error.message, "error");
   }
 };
 
-window.addEventListener("DOMContentLoaded", () => {
-  bindCollapsibleCards();
-  openRequestedSection();
-  loadPropertyApprovals();
-  loadRequests();
-  loadTransactions();
-});
+window.addEventListener("DOMContentLoaded", loadRequestsWorkflow);

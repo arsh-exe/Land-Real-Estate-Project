@@ -6,52 +6,65 @@
     <title>Land Registry System - Secure Digital Property Management</title>
     <link rel="stylesheet" href="/assets/css/styles.css?v=20260416b" />
   </head>
-  <body data-auth="public">
+  <body class="landing-page" data-auth="public">
     <header id="navbar-root"></header>
 
-    <main class="container">
-      <section class="page-header">
-        <h1>National Land & Real Estate Registration Portal</h1>
-        <p>
-          Secure, transparent, and efficient property registration with digital certificates and role-based verification
-        </p>
-      </section>
-
-      <section class="grid grid-3" style="margin: 2rem 0;">
-        <article class="card">
-          <h3>Transparent Records</h3>
-          <p>Track ownership history and registration status from request to final verification. Real-time updates and full audit trail.</p>
-        </article>
-        <article class="card">
-          <h3>Secure Processing</h3>
-          <p>Role-based approvals with JWT security and centralized government verification. Industry-standard encryption.</p>
-        </article>
-        <article class="card">
-          <h3>Digital Certificates</h3>
-          <p>Generate downloadable certificates with QR verification for approved transactions. Instantly accessible.</p>
-        </article>
-      </section>
-
-      <section style="text-align: center; margin: 3rem 0; animation: fadeInUp 0.8s ease-out;">
-        <h2>Get Started Today</h2>
-        <p style="color: var(--muted); margin-bottom: 1.5rem;">Join thousands of satisfied users managing their property rights digitally</p>
-        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-          <a href="/pages/login.html" class="btn btn-primary" style="display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem;">
-            Sign In
-          </a>
-          <a href="/pages/register.html" class="btn btn-outline" style="display: inline-block; padding: 0.8rem 1.5rem; font-size: 1rem;">
-            Create Account
-          </a>
+    <main class="container landing-content">
+      <section class="landing-hero">
+        <div class="landing-hero-copy">
+          <span class="landing-hero-badge">Official Government Registry</span>
+          <h1>National Land & Real Estate Registration Portal</h1>
+          <p>
+            Secure, transparent, and efficient property registration with digital certificates and role-based verification.
+            Establish immutable records for sovereign land ownership.
+          </p>
+          <div class="landing-hero-actions">
+            <a href="/pages/register.html" class="btn btn-primary landing-hero-btn">Create Account</a>
+            <a href="/pages/login.html" class="btn btn-outline landing-hero-btn">Sign In</a>
+          </div>
         </div>
+
+        <div class="landing-hero-art" aria-hidden="true">
+          <div class="landing-hero-art-frame" data-landing-hero-frame>
+            <img class="landing-hero-art-image is-active" data-hero-layer="0" src="/assets/images/vu-anh-TiVPTYCG_3E-unsplash.jpg" alt="" />
+            <img class="landing-hero-art-image" data-hero-layer="1" src="/assets/images/abby-rurenko-uOYak90r4L0-unsplash.jpg" alt="" />
+          </div>
+        </div>
+      </section>
+
+      <section class="landing-section">
+        <div class="landing-section-head">
+          <h2>Pillars of the Registry</h2>
+          <p>A modernized infrastructure designed to protect ownership rights and streamline legal processing.</p>
+        </div>
+
+        <section class="grid grid-3 landing-feature-grid">
+          <article class="card landing-feature-card">
+            <div class="landing-feature-icon">⟲</div>
+            <h3>Transparent Records</h3>
+            <p>Track ownership history and registration status from request to final verification. Real-time updates and full audit trail.</p>
+          </article>
+          <article class="card landing-feature-card">
+            <div class="landing-feature-icon">◔</div>
+            <h3>Secure Processing</h3>
+            <p>Role-based approvals with JWT security and centralized government verification. Industry-standard encryption.</p>
+          </article>
+          <article class="card landing-feature-card">
+            <div class="landing-feature-icon">⌬</div>
+            <h3>Digital Certificates</h3>
+            <p>Generate downloadable certificates with QR verification for approved transactions. Instantly accessible.</p>
+          </article>
+        </section>
       </section>
     </main>
 
     <footer class="footer">
       <p>Land Registry System • Ministry of Land Administration</p>
-      <p style="font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem;">Secure • Transparent • Reliable</p>
+      <p class="landing-footer-note">Secure • Transparent • Reliable</p>
     </footer>
 
     <script src="/assets/js/api.js"></script>
     <script src="/assets/js/navbar.js?v=20260416b"></script>
+    <script src="/assets/js/landing.js"></script>
   </body>
 </html>

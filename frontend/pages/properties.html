@@ -9,66 +9,130 @@
   <body data-auth="private">
     <header id="navbar-root"></header>
 
-    <main class="container">
+    <main class="container properties-page-main">
       <section class="page-header">
         <h1 id="properties-title">Property Registry</h1>
         <p id="properties-subtitle">Search listings, apply filters, manage submissions, and register your properties securely.</p>
       </section>
 
-      <section id="filter-block" class="card">
-        <h3>Search & Filter Properties</h3>
-        <form id="property-filter-form" class="form-row">
-          <input class="input" name="location" placeholder="Location" />
-          <select name="type" title="Filter by property type" aria-label="Filter by property type">
-            <option value="">All Types</option>
-            <option value="Residential">Residential</option>
-            <option value="Commercial">Commercial</option>
-            <option value="Agricultural">Agricultural</option>
-            <option value="Industrial">Industrial</option>
-            <option value="Other">Other</option>
-          </select>
-          <input class="input" name="minPrice" type="number" placeholder="Min Price" />
-          <input class="input" name="maxPrice" type="number" placeholder="Max Price" />
-          <button class="btn btn-primary" type="submit">Apply</button>
-        </form>
-      </section>
+      <section id="filter-block" class="card registry-filter-shell">
+        <form id="property-filter-form" class="registry-filter-form">
+          <label class="registry-field registry-field-location">
+            <span>Location Designation</span>
+            <div class="registry-input-wrap">
+              <input class="input" name="location" placeholder="Enter Region, District or Parcel ID" />
+            </div>
+          </label>
 
-      <section id="add-property-block" class="card hidden mt-1">
-        <h3 id="property-form-title">Add Property</h3>
-        <form id="add-property-form" enctype="multipart/form-data">
-          <div class="form-row">
-            <input class="input" name="title" placeholder="Title" required />
-            <input class="input" name="location" placeholder="Location" required />
-            <select name="type" required title="Property type" aria-label="Property type">
+          <label class="registry-field">
+            <span>Property Class</span>
+            <select name="type" title="Filter by property type" aria-label="Filter by property type">
+              <option value="">All Classes</option>
               <option value="Residential">Residential</option>
               <option value="Commercial">Commercial</option>
               <option value="Agricultural">Agricultural</option>
               <option value="Industrial">Industrial</option>
               <option value="Other">Other</option>
             </select>
-          </div>
-          <div class="form-row mt-08">
-            <input class="input" name="price" type="number" placeholder="Price" required />
-            <input class="input" name="area" type="number" placeholder="Area (sq.ft)" required />
-          </div>
-          <div class="form-row mt-08">
-            <div>
-              <label for="property-images">Upload Property Images</label>
-              <input class="input" id="property-images" name="images" type="file" multiple accept="image/*" />
-              <div id="property-images-selected" class="file-chip-list mt-06"></div>
-            </div>
-            <div>
-              <label for="documents">Property Documents</label>
-              <input class="input" id="documents" name="documents" type="file" multiple required />
-              <div id="property-documents-selected" class="file-chip-list mt-06"></div>
-            </div>
-          </div>
-          <div class="action-row mt-1">
-            <button id="property-form-submit" class="btn btn-primary" type="submit">Save Property</button>
-            <button id="property-form-cancel" class="btn btn-outline hidden" type="button">Cancel</button>
-          </div>
-          <p id="property-form-message" class="mt-06"></p>
+          </label>
+
+          <label class="registry-field registry-field-mini">
+            <span>Min Value</span>
+            <input class="input" name="minPrice" type="number" placeholder="---" />
+          </label>
+
+          <label class="registry-field registry-field-mini">
+            <span>Max Value</span>
+            <input class="input" name="maxPrice" type="number" placeholder="---" />
+          </label>
+
+          <button class="btn btn-primary" type="submit">Apply</button>
         </form>
+      </section>
+
+      <section id="add-property-block" class="hidden mt-1 property-add-shell">
+        <div class="property-add-grid">
+          <div class="property-add-main">
+            <header class="property-add-intro">
+              <h2 id="property-form-title">Add New Property Listing</h2>
+              <p>Enter official parcel details and upload supporting records for verification.</p>
+            </header>
+
+            <form id="add-property-form" class="property-add-form card" enctype="multipart/form-data">
+              <h3>Primary Details</h3>
+
+              <div class="property-add-fields">
+                <label class="property-field">
+                  <span>Property Title</span>
+                  <input class="input" name="title" placeholder="e.g. Willow Creek Estate" required />
+                </label>
+
+                <label class="property-field">
+                  <span>Location / Coordinates</span>
+                  <input class="input" name="location" placeholder="Enter physical address or lat/long" required />
+                </label>
+
+                <label class="property-field">
+                  <span>Property Type</span>
+                  <select name="type" required title="Property type" aria-label="Property type">
+                    <option value="Residential">Residential</option>
+                    <option value="Commercial">Commercial</option>
+                    <option value="Agricultural">Agricultural</option>
+                    <option value="Industrial">Industrial</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+
+                <label class="property-field">
+                  <span>Area (sq.ft)</span>
+                  <input class="input" name="area" type="number" placeholder="0.00" required />
+                </label>
+
+                <label class="property-field property-field-full">
+                  <span>Assessed Value</span>
+                  <input class="input" name="price" type="number" placeholder="0.00" required />
+                </label>
+              </div>
+
+              <footer class="property-add-actions">
+                <button id="property-form-cancel" class="btn btn-outline hidden" type="button">Cancel</button>
+                <button id="property-form-submit" class="btn btn-primary" type="submit">Save Property</button>
+              </footer>
+              <p id="property-form-message" class="mt-06"></p>
+            </form>
+          </div>
+
+          <aside class="property-add-aside">
+            <section class="card property-upload-card">
+              <h3>Property Documents</h3>
+              <p>Upload title deed scans, approvals, and supporting legal records.</p>
+              <label class="upload-drop" for="documents">
+                <input class="input" id="documents" name="documents" type="file" multiple />
+                <strong>Click to browse</strong>
+                <span>PDF, JPG, PNG (max 50MB)</span>
+              </label>
+              <div id="property-documents-selected" class="file-chip-list"></div>
+              <button id="clear-property-documents" class="btn btn-outline btn-sm" type="button">Clear Documents</button>
+            </section>
+
+            <section class="card property-upload-card">
+              <h3>Property Images</h3>
+              <p>Upload parcel photos for listing display.</p>
+              <label class="upload-drop" for="property-images">
+                <input class="input" id="property-images" name="images" type="file" multiple accept="image/*" />
+                <strong>Add Images</strong>
+                <span>JPG, PNG, WEBP</span>
+              </label>
+              <div id="property-images-selected" class="file-chip-list"></div>
+              <button id="clear-property-images" class="btn btn-outline btn-sm" type="button">Clear Images</button>
+            </section>
+
+            <section class="property-note-card">
+              <h4>Verification Required</h4>
+              <p>New submissions are marked Pending until reviewed by authorized officers.</p>
+            </section>
+          </aside>
+        </div>
       </section>
 
       <section id="listing-block" class="card mt-1">
@@ -79,51 +143,8 @@
 
     <footer class="footer">Property records and submission workflows</footer>
 
-    <div id="sell-modal" class="modal-overlay hidden" aria-hidden="true">
-      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="sell-modal-title">
-        <div class="modal-header">
-          <h3 id="sell-modal-title">Want to Sell: Update Property Details</h3>
-          <button id="sell-modal-close" class="btn btn-outline btn-sm" type="button" aria-label="Close">Close</button>
-        </div>
-        <form id="sell-property-form" enctype="multipart/form-data">
-          <div class="form-row">
-            <input id="sell-title" class="input" name="title" placeholder="Title" required />
-            <input id="sell-location" class="input" name="location" placeholder="Location" required />
-            <select id="sell-type" name="type" required title="Property type" aria-label="Property type">
-              <option value="Residential">Residential</option>
-              <option value="Commercial">Commercial</option>
-              <option value="Agricultural">Agricultural</option>
-              <option value="Industrial">Industrial</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="form-row mt-08">
-            <input id="sell-price" class="input" name="price" type="number" placeholder="Price" required />
-            <input id="sell-area" class="input" name="area" type="number" placeholder="Area (sq.ft)" required />
-          </div>
-          <div class="form-row mt-08">
-            <div>
-              <label for="sell-images">Upload New Property Images (optional)</label>
-              <input id="sell-images" class="input" name="images" type="file" multiple accept="image/*" />
-              <div id="sell-images-selected" class="file-chip-list mt-06"></div>
-            </div>
-            <div>
-              <label for="sell-documents">Upload New Property Documents (optional)</label>
-              <input id="sell-documents" class="input" name="documents" type="file" multiple />
-              <div id="sell-documents-selected" class="file-chip-list mt-06"></div>
-            </div>
-          </div>
-          <div class="action-row mt-1">
-            <button class="btn btn-primary" type="submit">Save & Open For Sale</button>
-            <button id="sell-modal-cancel" class="btn btn-outline" type="button">Cancel</button>
-          </div>
-          <p id="sell-form-message" class="mt-06"></p>
-        </form>
-      </div>
-    </div>
-
     <script src="/assets/js/api.js"></script>
-    <script src="/assets/js/navbar.js?v=20260416d"></script>
-    <script src="/assets/js/properties.js?v=20260416d"></script>
+    <script src="/assets/js/navbar.js?v=20260416b"></script>
+    <script src="/assets/js/properties.js?v=20260416"></script>
   </body>
 </html>

@@ -1,10 +1,21 @@
 const detailsRoot = document.getElementById("property-details-root");
+
 const toCurrency = (amount) =>
   new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(Number(amount || 0));
+
+const resolveImageUrl = (image) => {
+  if (!image) return "";
+  if (typeof image === "string") {
+    return image.startsWith("http") ? image : `${SERVER_URL}${image}`;
+  }
+  const path = image.filePath || image.url || image.src;
+  if (!path) return "";
+  return path.startsWith("http") ? path : `${SERVER_URL}${path}`;
+};
 
 const getImageDocuments = (property = {}) => {
   const docs = Array.isArray(property.documents) ? property.documents : [];
@@ -17,136 +28,13 @@ const getDocumentTypeLabel = (doc = {}) => {
 
   if (kind === "CERTIFICATE") return "CERT";
   if (mime.includes("pdf")) return "PDF";
-  if (mime.startsWith("image/")) return "";
   return "DOC";
 };
 
-const getPropertyStatusClass = (status = "") => {
-  const normalized = String(status).toLowerCase();
-  if (normalized === "sold") return "sold";
-  if (normalized === "pending request") return "pending";
-  return "available";
-};
-
-const resolveImageUrl = (image) => {
-  if (!image) return "";
-  if (typeof image === "string") {
-    return image.startsWith("http") ? image : `${SERVER_URL}${image}`;
-  }
-
-  const path = image.filePath || image.url || image.src;
-  if (!path) return "";
-  return path.startsWith("http") ? path : `${SERVER_URL}${path}`;
-};
-
-const renderDetailsSlider = (property) => {
-  const images = Array.isArray(property?.images) ? property.images : [];
-
-  const isVerified = property?.approval?.status === "Approved";
-  const verificationBadge = `
-    <span class="badge overlay-badge ${isVerified ? "verified" : ""}" style="margin-bottom: 5px; display: inline-block;">
-      ${isVerified ? "✓ Verified" : property?.approval?.status || "Pending Verification"}
-    </span>
-  `;
-
-  const marketBadge = property?.isOpenForSale
-    ? `<span class="badge" style="background: var(--success); color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🟢 For Sale</span>`
-    : `<span class="badge" style="background: #64748b; color: white; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">🔴 Off Market</span>`;
-
-  const badgesHtml = `
-    <div class="property-badge-overlay" style="top: 16px; left: 16px; display: flex; flex-direction: column; align-items: flex-start;">
-      ${verificationBadge}
-      ${marketBadge}
-    </div>
-  `;
-
-  if (!images || images.length === 0) {
-    return `<div class="details-slider-container" style="display:flex; align-items:center; justify-content:center; background:#f1f5f9;">
-              ${badgesHtml}
-              <span style="color:var(--muted); font-weight:600;">No Images Available</span>
-            </div>`;
-  }
-
-  // Track + clone for seamless looping
-  return `
-    <div class="details-slider-container" id="property-slider" data-index="0" data-total="${images.length}" data-animating="false">
-      ${badgesHtml}
-
-      <div class="details-slider-track" id="slider-track" style="transform: translateX(0%);">
-        ${images.map((url) => `<img class="details-slide" src="${url}" alt="Property View" loading="lazy" />`).join("")}
-        <img class="details-slide" src="${images[0]}" aria-hidden="true" loading="lazy" />
-      </div>
-
-      <button class="slider-btn slider-prev" type="button" aria-label="Previous image">&#10094;</button>
-      <button class="slider-btn slider-next" type="button" aria-label="Next image">&#10095;</button>
-
-      <div class="details-dots" id="slider-dots">
-        ${images
-          .map((_, i) => `<div class="details-dot ${i === 0 ? "active" : ""}" data-slide-to="${i}"></div>`)
-          .join("")}
-      </div>
-    </div>
-  `;
-};
-
-const initDetailsSlider = () => {
-  const slider = document.getElementById("property-slider");
-  if (!slider) return;
-
-  const track = document.getElementById("slider-track");
-  if (!track) return;
-
-  const dots = slider.querySelectorAll(".details-dot");
-  const prevBtn = slider.querySelector(".slider-prev");
-  const nextBtn = slider.querySelector(".slider-next");
-  const totalRealImages = parseInt(slider.dataset.total || "0", 10);
-
-  const setSlide = (targetIndex) => {
-    if (slider.dataset.animating === "true") return;
-
-    track.style.transition = "transform 0.5s ease-in-out";
-
-    let actualTransformIndex = targetIndex;
-    if (targetIndex < 0) {
-      actualTransformIndex = totalRealImages - 1;
-    }
-
-    track.style.transform = `translateX(-${actualTransformIndex * 100}%)`;
-    slider.dataset.index = String(actualTransformIndex);
-
-    const displayIndex = actualTransformIndex === totalRealImages ? 0 : actualTransformIndex;
-    dots.forEach((dot, idx) => {
-      dot.classList.toggle("active", idx === displayIndex);
-    });
-
-    if (actualTransformIndex === totalRealImages) {
-      slider.dataset.animating = "true";
-
-      window.setTimeout(() => {
-        track.style.transition = "none";
-        track.style.transform = "translateX(0%)";
-        slider.dataset.index = "0";
-        track.offsetHeight;
-        slider.dataset.animating = "false";
-      }, 500);
-    }
-  };
-
-  prevBtn?.addEventListener("click", () => {
-    setSlide(parseInt(slider.dataset.index || "0", 10) - 1);
-  });
-
-  nextBtn?.addEventListener("click", () => {
-    setSlide(parseInt(slider.dataset.index || "0", 10) + 1);
-  });
-
-  dots.forEach((dot) => {
-    dot.addEventListener("click", (event) => {
-      const target = event.currentTarget;
-      if (!(target instanceof HTMLElement)) return;
-      setSlide(parseInt(target.dataset.slideTo || "0", 10));
-    });
-  });
+const formatDate = (value) => {
+  const date = new Date(value || Date.now());
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 };
 
 const renderPropertyDetails = (property, propertyStatus = "Available") => {
@@ -155,155 +43,173 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
   const currentUserId = currentUser?._id || currentUser?.id;
   const ownerId = property?.owner?._id || property?.owner?.id || property?.owner;
   const isOwner = Boolean(currentUserId) && String(ownerId) === String(currentUserId);
+
   const imageDocs = getImageDocuments(property);
   const imageUrls = [
     ...(Array.isArray(property.images) ? property.images.map(resolveImageUrl) : []),
     ...imageDocs.map((doc) => `${SERVER_URL}${doc.filePath}`),
   ].filter(Boolean);
-  const hasImages = imageUrls.length > 0;
 
-  const documents = Array.isArray(property.documents) ? property.documents : [];
-  const propertyDocuments = documents.filter((doc) => {
-    const mime = String(doc?.mimeType || "").toLowerCase();
-    return !mime.startsWith("image/");
-  });
-  const ownershipHistory = Array.isArray(property.ownershipHistory) ? property.ownershipHistory : [];
-  const legalStatus = property?.approval?.status || propertyStatus || "Pending";
-  const sliderProperty = {
-    ...property,
-    images: imageUrls,
-  };
-
-  let actionButtonsHtml = "";
-
-  if (currentRole === "user" && !isOwner) {
-    if (property.isOpenForSale) {
-      actionButtonsHtml += `<button class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1.1rem;" data-request="${property._id}">Request to Buy</button>`;
-    } else {
-      actionButtonsHtml += `<button class="btn btn-secondary" style="width: 100%; padding: 12px; cursor: not-allowed;" disabled>Not Currently For Sale</button>`;
-    }
-  } else if (isOwner) {
-    actionButtonsHtml += `<button class="btn btn-outline" disabled style="border-color: var(--success); color: var(--success); cursor: default;">✓ Owned by You</button>`;
+  const galleryImages = [...new Set(imageUrls)];
+  if (!galleryImages.length) {
+    galleryImages.push("https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=1400&q=70");
   }
 
+  const thumbImages = galleryImages.slice(0, 4);
+  const remainingThumbs = Math.max(0, galleryImages.length - 4);
+
+  const documents = Array.isArray(property.documents) ? property.documents : [];
+  const nonImageDocs = documents.filter((doc) => !String(doc?.mimeType || "").toLowerCase().startsWith("image/"));
+  const ownershipHistory = Array.isArray(property.ownershipHistory) ? property.ownershipHistory : [];
+
+  const legalStatus = property?.approval?.status || propertyStatus || "Pending";
+  const isVerified = legalStatus === "Approved";
+  const isForSale = Boolean(property?.isOpenForSale);
+
+  const titleNumber = property?.titleNumber || `NGL${String(property?._id || "000000").slice(-6).toUpperCase()}`;
+  const lastRegistered = formatDate(property?.updatedAt || property?.createdAt);
+
+  const metrics = [
+    { icon: "▦", value: property?.bedrooms ?? 6, label: "Bedrooms" },
+    { icon: "▥", value: property?.bathrooms ?? 4, label: "Bathrooms" },
+    { icon: "◪", value: property?.area ? `${property.area}` : "4,850", label: "Sq Ft (Internal)" },
+    { icon: "▲", value: property?.plotSize || "0.2", label: "Acres (Plot)" },
+  ];
+
+  let transferAction = `<button class="btn btn-secondary" disabled>Request Official Transfer</button>`;
+  if (currentRole === "user" && !isOwner && isForSale) {
+    transferAction = `<button class="btn btn-primary" data-request="${property._id}">Request Official Transfer</button>`;
+  } else if (isOwner) {
+    transferAction = `<button class="btn btn-outline" disabled>Owned by You</button>`;
+  }
+
+  const docItems = nonImageDocs.length
+    ? nonImageDocs
+        .slice(0, 3)
+        .map(
+          (doc) => `
+            <article class="pd3-doc-item">
+              <span class="pd3-doc-icon">${getDocumentTypeLabel(doc)}</span>
+              <div>
+                <p class="pd3-doc-title">${doc.originalName || "Registry Document"}</p>
+                <p class="pd3-doc-meta">${doc.mimeType || "PDF"}</p>
+              </div>
+              <a class="pd3-doc-link" href="${SERVER_URL}${doc.filePath}" target="_blank" rel="noopener noreferrer">↓</a>
+            </article>
+          `
+        )
+        .join("")
+    : `<p class="pd3-empty">No registered documents available.</p>`;
+
+  const historyItems = ownershipHistory.length
+    ? ownershipHistory
+        .map(
+          (entry, index) => `
+            <article class="pd3-history-item ${index === 0 ? "active" : ""}">
+              <h4>${index === 0 ? "Current Owner" : index === 1 ? "Previous Owner" : "Historical Owner"}</h4>
+              <p class="pd3-history-name">${entry.owner?.fullName || "Owner"}</p>
+              <p>Registered: ${formatDate(entry.transferredAt)}</p>
+              <p>${entry.note || "Registry record"}</p>
+            </article>
+          `
+        )
+        .join("")
+    : `<p class="pd3-empty">No ownership history recorded.</p>`;
+
   detailsRoot.innerHTML = `
-    <div class="property-details-layout">
-      <div class="property-main-content">
-        ${renderDetailsSlider(sliderProperty)}
+    <section class="pd3-root">
+      <section class="pd3-top">
+        <div class="pd3-gallery-col">
+          <button class="pd3-main-image-wrap" type="button" aria-label="Open main property image">
+            <img id="pd3-main-image" class="pd3-main-image" src="${galleryImages[0]}" alt="Main property view" loading="lazy" />
+          </button>
 
-        <div class="property-header">
-          <h1>${property.title}</h1>
-          <p class="property-location-copy">📍 ${property.location || "Location not provided"}</p>
-          <h3>About this Property</h3>
-          <p class="property-description">
-            ${property.description || "No specific description has been provided for this asset."}
-          </p>
+          <div class="pd3-thumbs">
+            ${thumbImages
+              .map(
+                (image, index) => `
+                  <button class="pd3-thumb ${index === 0 ? "active" : ""}" type="button" data-image="${image}">
+                    <img src="${image}" alt="Property thumbnail ${index + 1}" loading="lazy" />
+                    ${index === thumbImages.length - 1 && remainingThumbs ? `<span class="pd3-thumb-overlay">+${remainingThumbs} Photos</span>` : ""}
+                  </button>
+                `
+              )
+              .join("")}
+          </div>
         </div>
 
-        <article class="card property-documents">
-          <h3>Documents</h3>
-          <div class="pd-doc-grid">
-            ${
-              propertyDocuments.length
-                ? propertyDocuments
-                    .map(
-                      (doc) => `
-                        <article class="pd-doc-card">
-                          <div class="pd-doc-top">
-                            ${
-                              getDocumentTypeLabel(doc)
-                                ? `<span class="pd-doc-icon">${getDocumentTypeLabel(doc)}</span>`
-                                : ""
-                            }
-                            <span class="pd-doc-kind">${doc.kind || "PROPERTY_DOC"}</span>
-                          </div>
-                          <p class="pd-doc-name" title="${doc.originalName}">${doc.originalName}</p>
-                          <p class="pd-doc-meta">${doc.mimeType || "Unknown type"}</p>
-                          <a class="btn btn-outline" href="${SERVER_URL}${doc.filePath}" target="_blank" rel="noopener noreferrer">Open</a>
-                        </article>
-                      `
-                    )
-                    .join("")
-                : "<p>No property documents uploaded.</p>"
-            }
-          </div>
-        </article>
+        <aside class="pd3-summary-col">
+          <span class="pd3-badge">${isVerified ? "Verified Registry" : legalStatus}</span>
+          <h1>${property.title || "Untitled Estate"}</h1>
+          <p class="pd3-location">${property.location || "Location not provided"}</p>
 
-        <article class="card property-history">
-          <h3>Ownership History</h3>
-          <div class="pd-timeline">
-            ${
-              ownershipHistory.length
-                ? ownershipHistory
-                    .map(
-                      (entry) => `
-                        <article class="pd-timeline-item">
-                          <strong>${entry.owner?.fullName || "Owner"}</strong>
-                          <p>${new Date(entry.transferredAt).toLocaleString()}</p>
-                          <span class="badge pending">${entry.note || "Record"}</span>
-                        </article>
-                      `
-                    )
-                    .join("")
-                : "<p>No ownership history recorded.</p>"
-            }
+          <article class="pd3-summary-card">
+            <h3>Registry Summary</h3>
+            <div class="pd3-summary-row"><span>Title Number</span><strong>${titleNumber}</strong></div>
+            <div class="pd3-summary-row"><span>Last Registered</span><strong>${lastRegistered}</strong></div>
+            <div class="pd3-summary-row"><span>Current Valuation</span><strong>${toCurrency(property.price || 0)}</strong></div>
+          </article>
+
+          <div class="pd3-actions">
+            ${transferAction}
+            <button class="btn btn-outline" type="button" disabled>Contact Registry Agent</button>
           </div>
-        </article>
+        </aside>
+      </section>
+
+      <section class="pd3-bottom">
+        <div class="pd3-left">
+          <article class="pd3-panel pd3-overview">
+            <h2>Property Overview</h2>
+            <div class="pd3-overview-copy">${
+              property.description ||
+              "The Wellington Manor presents a rare opportunity to acquire a substantial Grade II listed residence situated within one of Kensington's most sought-after enclaves. Originally constructed in 1842, the property retains an exceptional array of period features including intricate cornicing, working marble fireplaces, and original sash windows, seamlessly integrated with modern infrastructure."
+            }</div>
+          </article>
+
+          <article class="pd3-panel pd3-stats">
+            <h2>Key Statistics</h2>
+            <div class="pd3-stats-grid">
+              ${metrics
+                .map(
+                  (metric) => `
+                    <article class="pd3-stat-card">
+                      <span class="pd3-stat-icon">${metric.icon}</span>
+                      <p class="pd3-stat-value">${metric.value}</p>
+                      <p class="pd3-stat-label">${metric.label}</p>
+                    </article>
+                  `
+                )
+                .join("")}
+            </div>
+          </article>
+        </div>
+
+        <aside class="pd3-right">
+          <article class="pd3-panel pd3-history">
+            <h2>Ownership History</h2>
+            ${historyItems}
+          </article>
+
+          <article class="pd3-panel pd3-docs">
+            <h2>Registered Documents</h2>
+            ${docItems}
+          </article>
+        </aside>
+      </section>
+
+      <div class="pd3-lightbox" aria-hidden="true">
+        <button class="pd3-lightbox-close" type="button" data-lightbox-close aria-label="Close image">×</button>
+        <img class="pd3-lightbox-image" src="" alt="Expanded property image" />
       </div>
-
-      <aside class="property-sidebar">
-        <div class="sticky-sidebar">
-          <div class="sidebar-price">${toCurrency(property.price)}</div>
-
-          <div class="sidebar-meta">
-            <div class="sidebar-meta-item">
-              <span>Property Type</span>
-              <strong>${property.type || "Land Asset"}</strong>
-            </div>
-            <div class="sidebar-meta-item">
-              <span>Area Size</span>
-              <strong>${property.area ? `${property.area} Sq Ft` : "Size N/A"}</strong>
-            </div>
-            <div class="sidebar-meta-item">
-              <span>Current Owner</span>
-              <strong>${property.owner?.fullName || "Private"}</strong>
-            </div>
-            <div class="sidebar-meta-item">
-              <span>Market Status</span>
-              <strong style="color: ${property.isOpenForSale ? "var(--success)" : "#64748b"};">
-                ${property.isOpenForSale ? "Available to Buy" : "Off Market"}
-              </strong>
-            </div>
-            <div class="sidebar-meta-item" style="border-bottom: none;">
-              <span>Gov. Verification</span>
-              <strong style="color: ${legalStatus === "Approved" ? "var(--success)" : "inherit"};">
-                ${legalStatus === "Approved" ? "✓ Verified" : legalStatus}
-              </strong>
-            </div>
-          </div>
-
-          <div class="sidebar-actions">
-            ${actionButtonsHtml}
-          </div>
-        </div>
-      </aside>
-    </div>
-
-    ${
-      hasImages
-        ? `<div class="pd-lightbox" aria-hidden="true">
-             <button class="pd-lightbox-close" type="button" data-lightbox-close aria-label="Close enlarged view">×</button>
-             <img class="pd-lightbox-image" src="" alt="Enlarged property view" />
-           </div>`
-        : ""
-    }
+    </section>
   `;
 
-  initDetailsSlider();
-
-  const lightbox = detailsRoot.querySelector(".pd-lightbox");
-  const lightboxImage = lightbox?.querySelector(".pd-lightbox-image");
-  const closeBtn = lightbox?.querySelector("[data-lightbox-close]");
+  const mainImage = detailsRoot.querySelector("#pd3-main-image");
+  const thumbButtons = detailsRoot.querySelectorAll(".pd3-thumb");
+  const mainImageWrap = detailsRoot.querySelector(".pd3-main-image-wrap");
+  const lightbox = detailsRoot.querySelector(".pd3-lightbox");
+  const lightboxImage = detailsRoot.querySelector(".pd3-lightbox-image");
 
   const openLightbox = (src) => {
     if (!lightbox || !lightboxImage || !src) return;
@@ -320,25 +226,28 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
     document.body.style.overflow = "";
   };
 
-  detailsRoot.querySelectorAll(".details-slide").forEach((image) => {
-    image.addEventListener("click", () => openLightbox(image.src));
+  thumbButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const next = button.dataset.image || "";
+      if (!mainImage || !next) return;
+      mainImage.src = next;
+      thumbButtons.forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+    });
   });
 
-  closeBtn?.addEventListener("click", closeLightbox);
+  mainImageWrap?.addEventListener("click", () => openLightbox(mainImage?.src));
+  detailsRoot.querySelector("[data-lightbox-close]")?.addEventListener("click", closeLightbox);
 
-  if (lightbox) {
-    lightbox.addEventListener("click", (event) => {
-      if (event.target === lightbox) {
-        closeLightbox();
-      }
-    });
+  lightbox?.addEventListener("click", (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
 
-    window.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && lightbox.classList.contains("open")) {
-        closeLightbox();
-      }
-    });
-  }
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && lightbox?.classList.contains("open")) {
+      closeLightbox();
+    }
+  });
 
   detailsRoot.querySelectorAll("[data-request]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -347,7 +256,7 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
           method: "POST",
           body: JSON.stringify({ propertyId: button.dataset.request }),
         });
-        showToast("Request submitted successfully", "success");
+        showToast("Transfer request submitted successfully", "success");
       } catch (error) {
         showToast(error.message, "error");
       }
@@ -357,6 +266,7 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
 
 const loadPropertyDetails = async () => {
   if (!detailsRoot) return;
+
   const params = new URLSearchParams(window.location.search);
   const pathMatch = window.location.pathname.match(/property-details\/(.+)$/);
   const idFromPath = pathMatch?.[1] ? decodeURIComponent(pathMatch[1]) : "";
@@ -375,18 +285,11 @@ const loadPropertyDetails = async () => {
 
   sessionStorage.setItem("selectedPropertyId", id);
 
-  // Show skeleton loading state
   detailsRoot.innerHTML = `
-    <section class="pd-layout">
-      <section class="pd-main">
-        <article class="card skeleton" style="border: none; box-shadow: none; height: 320px; margin-bottom: 1rem;"></article>
-        <article class="card skeleton" style="border: none; box-shadow: none; height: 140px; margin-bottom: 1rem;"></article>
-        <article class="card skeleton" style="border: none; box-shadow: none; height: 220px;"></article>
-      </section>
-      <aside class="pd-sidebar">
-        <article class="card skeleton" style="border: none; box-shadow: none; height: 240px; margin-bottom: 1rem;"></article>
-        <article class="card skeleton" style="border: none; box-shadow: none; height: 240px;"></article>
-      </aside>
+    <section class="pd3-root">
+      <article class="card skeleton" style="height: 380px; border: none; box-shadow: none;"></article>
+      <article class="card skeleton" style="height: 280px; border: none; box-shadow: none;"></article>
+      <article class="card skeleton" style="height: 220px; border: none; box-shadow: none;"></article>
     </section>
   `;
 

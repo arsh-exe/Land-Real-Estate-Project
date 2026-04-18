@@ -4,64 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Registration Requests • Land Registry System</title>
-    <link rel="stylesheet" href="https://unpkg.com/swiper@8/swiper-bundle.min.css" />
     <link rel="stylesheet" href="/assets/css/styles.css?v=20260416b" />
   </head>
-  <body data-auth="private">
+  <body class="requests-page" data-auth="private">
     <header id="navbar-root"></header>
 
-    <main class="container">
-      <section class="page-header">
-        <h1>Registration Workflow</h1>
-        <p>Track buyer requests, seller decisions, officer verification, and all transaction logs.</p>
-      </section>
-
-      <details id="section-property-approvals" class="card collapsible-card mt-1">
-        <summary>
-          <h3>Property Verification Queue</h3>
-          <span class="collapsible-icon" aria-hidden="true"></span>
-        </summary>
-        <div id="property-approvals-root" class="list"></div>
-      </details>
-
-      <details id="section-pending" class="card collapsible-card mt-1">
-        <summary>
-          <h3>Pending Requests</h3>
-          <span class="collapsible-icon" aria-hidden="true"></span>
-        </summary>
-        <div id="requests-pending-root" class="list"></div>
-      </details>
-
-      <details id="section-approved" class="card collapsible-card mt-1">
-        <summary>
-          <h3>Approved Requests</h3>
-          <span class="collapsible-icon" aria-hidden="true"></span>
-        </summary>
-        <div id="requests-approved-root" class="list"></div>
-      </details>
-
-      <details id="section-rejected" class="card collapsible-card mt-1">
-        <summary>
-          <h3>Rejected Requests</h3>
-          <span class="collapsible-icon" aria-hidden="true"></span>
-        </summary>
-        <div id="requests-rejected-root" class="list"></div>
-      </details>
-
-      <details id="section-transactions" class="card collapsible-card mt-1">
-        <summary>
-          <h3>Transaction History</h3>
-          <span class="collapsible-icon" aria-hidden="true"></span>
-        </summary>
-        <div id="transactions-root" class="list"></div>
-      </details>
+    <main class="requests-main">
+      <section id="requests-root"></section>
     </main>
 
     <footer class="footer">Request processing and transaction tracking</footer>
 
     <script src="/assets/js/api.js"></script>
     <script src="/assets/js/navbar.js?v=20260416b"></script>
-    <script src="https://unpkg.com/swiper@8/swiper-bundle.min.js"></script>
     <script src="/assets/js/requests.js"></script>
   </body>
 </html>

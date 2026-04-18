@@ -36,6 +36,27 @@ if (authForm) {
 
       const formData = new FormData(authForm);
       const payload = Object.fromEntries(formData.entries());
+      if (mode === "register") {
+        const firstName = String(payload.firstName || "").trim();
+        const lastName = String(payload.lastName || "").trim();
+        const password = String(payload.password || "");
+        const confirmPassword = String(payload.confirmPassword || "");
+
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match");
+        }
+
+        if (!payload.terms) {
+          throw new Error("You must accept the legal terms to continue");
+        }
+
+        payload.fullName = `${firstName} ${lastName}`.trim();
+        delete payload.firstName;
+        delete payload.lastName;
+        delete payload.confirmPassword;
+        delete payload.terms;
+      }
+
       const endpoint = mode === "register" ? "/auth/signup" : "/auth/login";
 
       const data = await apiRequest(endpoint, {

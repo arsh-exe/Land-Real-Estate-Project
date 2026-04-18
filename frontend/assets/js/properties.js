@@ -225,11 +225,15 @@ const updatePropertiesPageLayout = () => {
   const role = roleKey(user?.role);
   const mode = parsePropertiesPageMode();
 
+  const pageHeader = document.querySelector(".page-header");
   const titleEl = document.getElementById("properties-title");
   const subtitleEl = document.getElementById("properties-subtitle");
   const addBlock = document.getElementById("add-property-block");
   const filterBlock = document.getElementById("filter-block");
   const listingBlock = document.getElementById("listing-block");
+
+  document.body.classList.remove("properties-add-mode");
+  document.body.classList.remove("properties-buy-mode");
 
   if (addBlock) {
     const canAdd = user && ["user", "seller", "buyer", "admin"].includes(role);
@@ -237,13 +241,17 @@ const updatePropertiesPageLayout = () => {
   }
 
   if (mode === "add") {
+    document.body.classList.add("properties-add-mode");
+    pageHeader?.classList.add("hidden");
     if (titleEl) titleEl.textContent = "Add Property";
-    if (subtitleEl) subtitleEl.textContent = "Create a new property listing for registration and management.";
+    if (subtitleEl) subtitleEl.textContent = "Add official parcel details and supporting documents for registry approval.";
     filterBlock?.classList.add("hidden");
     listingBlock?.classList.add("hidden");
     addBlock?.classList.remove("hidden");
     return;
   }
+
+  pageHeader?.classList.remove("hidden");
 
   if (mode === "mine") {
     if (titleEl) titleEl.textContent = "My Properties";
@@ -266,6 +274,7 @@ const updatePropertiesPageLayout = () => {
   if (titleEl) titleEl.textContent = "Property Registry";
   if (subtitleEl)
     subtitleEl.textContent = "Search listings, apply filters, manage submissions, and register your properties securely.";
+  document.body.classList.add("properties-buy-mode");
   filterBlock?.classList.remove("hidden");
   // In search/list mode, hide the add form and keep focus on discovery.
   addBlock?.classList.add("hidden");
@@ -336,6 +345,12 @@ const normalizeProperty = (property = {}) => {
     area,
     price,
   };
+};
+
+const formatMonthYear = (value) => {
+  const date = new Date(value || Date.now());
+  if (Number.isNaN(date.getTime())) return "N/A";
+  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 };
 
 const queryStringFromForm = (formData) => {
@@ -503,6 +518,18 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
     `;
 
         const isAdmin = currentRole === "admin";
+        const isOwnerRole = ["user", "seller", "buyer"].includes(currentRole) && isOwner;
+        const approvalStatus = String(property?.approval?.status || "Pending");
+        const sellPayload = encodeURIComponent(
+          JSON.stringify({
+            title: property.title || "",
+            location: property.location || "",
+            type: property.type || "Residential",
+            price: property.price ?? "",
+            area: property.area ?? "",
+          })
+        );
+
         const buyButtonHtml =
           currentRole === "user" && !isOwner
             ? property.isOpenForSale
@@ -510,10 +537,22 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
               : `<button class="btn btn-secondary btn-sm" disabled style="cursor:not-allowed; opacity:0.7;">Not For Sale</button>`
             : "";
 
+        const ownerActionsHtml = isOwnerRole
+          ? property.isOpenForSale
+            ? `<button class="btn btn-outline btn-sm" data-sale-stop="${property._id}">Stop Selling</button>`
+            : `<button class="btn btn-primary btn-sm" data-sell-edit="${property._id}" data-sell-payload="${sellPayload}">Sell Property</button>`
+          : "";
+
+        const docActionsHtml = isOwnerRole && ["Pending", "Rejected"].includes(approvalStatus)
+          ? `<button class="btn btn-outline btn-sm" data-doc-edit="${property._id}" data-sell-payload="${sellPayload}">Update Docs</button>`
+          : "";
+
         const actionButtons = `
           <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
             <a href="/pages/property-details.html?id=${property._id}" class="btn btn-outline btn-sm">View Details</a>
             ${buyButtonHtml}
+            ${ownerActionsHtml}
+            ${docActionsHtml}
             ${
               isAdmin
                 ? `<button class="btn btn-secondary btn-sm" data-edit="${property._id}">Update</button>
@@ -522,6 +561,67 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
             }
           </div>
         `;
+
+        if (pageMode === "all") {
+          const category = String(property.type || "Land Record").toUpperCase();
+          const registryId = `REG-${String(property._id || "").slice(-6).toUpperCase()}`;
+          const assessedAt = formatMonthYear(property.updatedAt || property.createdAt);
+
+          return `
+            <article class="property-item card registry-card" data-id="${property._id}">
+              <div class="property-media registry-media ${hasImage ? "property-carousel" : ""}" 
+                   ${hasImage ? `data-images="${encodedImages}" data-index="0"` : ""}>
+                ${badgesHtml}
+                ${
+                  hasImage
+                    ? `<div class="carousel-track" style="transform: translateX(0%);">
+                         ${imageUrls.map((url) => `<img class="property-image" src="${url}" loading="lazy" />`).join("")}
+                         ${imageUrls.length > 1 ? `<img class="property-image" src="${imageUrls[0]}" aria-hidden="true" loading="lazy" />` : ""}
+                       </div>
+                       ${
+                         imageUrls.length > 1
+                           ? `<div class="carousel-dots" data-carousel-dots>
+                                ${imageUrls.map((_, i) => `<div class="carousel-dot ${i === 0 ? "active" : ""}"></div>`).join("")}
+                              </div>`
+                           : ""
+                       }`
+                    : `<div class="property-image-placeholder">No Image Available</div>`
+                }
+              </div>
+
+              <div class="property-info registry-info">
+                <div class="registry-topline">
+                  <div>
+                    <p class="registry-class">${category}</p>
+                    <h3 class="registry-title">${property.title}</h3>
+                    <p class="registry-location">${property.location}</p>
+                  </div>
+                  <h2 class="property-price registry-price">${toCurrency(property.price)}</h2>
+                </div>
+
+                <div class="registry-meta-grid">
+                  <div>
+                    <p class="registry-meta-label">Parcel Area</p>
+                    <p class="registry-meta-value">${property.area ? `${property.area} sq ft` : "N/A"}</p>
+                  </div>
+                  <div>
+                    <p class="registry-meta-label">Registry ID</p>
+                    <p class="registry-meta-value">${registryId}</p>
+                  </div>
+                  <div>
+                    <p class="registry-meta-label">Last Assessed</p>
+                    <p class="registry-meta-value">${assessedAt}</p>
+                  </div>
+                </div>
+
+                <div class="registry-actions">
+                  ${buyButtonHtml || `<button class="btn btn-secondary btn-sm" disabled>Not For Sale</button>`}
+                  <a href="/pages/property-details.html?id=${property._id}" class="btn btn-outline btn-sm">View Archival Details</a>
+                </div>
+              </div>
+            </article>
+          `;
+        }
 
         return `
   <article class="property-item card" data-id="${property._id}">

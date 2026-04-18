@@ -1,0 +1,450 @@
+body.properties-add-mode {
+  background: #edf0f5;
+}
+
+.properties-page-main {
+  padding-bottom: 2rem;
+}
+
+.property-add-shell {
+  margin-top: 0.5rem;
+}
+
+.property-add-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.75fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.property-add-intro {
+  margin-bottom: 0.9rem;
+}
+
+.property-add-intro h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  letter-spacing: -0.03em;
+  color: #13254a;
+  font-style: italic;
+}
+
+.property-add-intro p {
+  margin: 0.4rem 0 0;
+  color: #5f6f85;
+  max-width: 58ch;
+}
+
+.property-add-form {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f7f8fb;
+  padding: 1.15rem;
+}
+
+.property-add-form h3 {
+  margin: 0 0 1rem;
+  font-size: 1.9rem;
+  font-weight: 500;
+  color: #1a2a4b;
+  border-bottom: 1px solid #e0e6ef;
+  padding-bottom: 0.75rem;
+}
+
+.property-add-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.property-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.property-field > span {
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  color: #5e6d82;
+  font-weight: 700;
+}
+
+.property-field-full {
+  grid-column: 1 / -1;
+}
+
+.properties-add-mode .property-add-form .input,
+.properties-add-mode .property-add-form select {
+  border: 1px solid #d4dce8;
+  border-radius: 10px;
+  padding: 0.72rem 0.8rem;
+  background: #f4f6fa;
+  box-shadow: none;
+  transform: none;
+}
+
+.properties-add-mode .property-add-form .input:focus,
+.properties-add-mode .property-add-form select:focus {
+  border-color: #193463;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(25, 52, 99, 0.12);
+  transform: none;
+}
+
+.property-add-actions {
+  margin-top: 1rem;
+  border-top: 1px solid #e0e6ef;
+  padding-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.property-add-aside {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.property-upload-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8f9fc;
+}
+
+.property-upload-card h3 {
+  margin: 0 0 0.45rem;
+  font-size: 1.45rem;
+}
+
+.property-upload-card p {
+  margin: 0 0 0.7rem;
+  color: #5f6f85;
+  font-size: 0.92rem;
+}
+
+.upload-drop {
+  border: 2px dashed #ced8e5;
+  border-radius: 12px;
+  background: #f1f4f9;
+  min-height: 116px;
+  padding: 0.9rem;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.upload-drop:hover {
+  border-color: #193463;
+  background: #eef3fb;
+}
+
+.upload-drop input {
+  display: none;
+}
+
+.upload-drop strong {
+  font-size: 1rem;
+  color: #0f2d57;
+}
+
+.upload-drop span {
+  color: #63748b;
+  font-size: 0.84rem;
+}
+
+.property-note-card {
+  background: #bcdff7;
+  border: 1px solid #9bc6e5;
+  color: #163957;
+  border-radius: 12px;
+  padding: 0.8rem;
+}
+
+.property-note-card h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.property-note-card p {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 980px) {
+  .property-add-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .property-add-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .property-field-full {
+    grid-column: auto;
+  }
+
+  .property-add-intro h2 {
+    font-size: 2rem;
+  }
+
+  .property-add-form h3 {
+    font-size: 1.45rem;
+  }
+}
+
+body.properties-buy-mode {
+  background: #eef1f5;
+}
+
+.properties-buy-mode .page-header {
+  padding-bottom: 0.7rem;
+}
+
+.properties-buy-mode .page-header h1 {
+  background: none;
+  -webkit-text-fill-color: #0f2042;
+  color: #0f2042;
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  letter-spacing: -0.03em;
+}
+
+.properties-buy-mode #listing-block,
+.properties-buy-mode #filter-block {
+  border: 1px solid #e3e8f1;
+  border-radius: 16px;
+  background: #f8fafd;
+  box-shadow: 0 10px 30px rgba(11, 46, 89, 0.06);
+}
+
+.properties-buy-mode #listing-block {
+  padding: 0.75rem;
+}
+
+.properties-buy-mode #listing-block h3 {
+  display: none;
+}
+
+.registry-filter-shell {
+  padding: 1rem 1.1rem;
+  border-radius: 22px;
+  background: #f4f6f9;
+}
+
+.registry-filter-form {
+  display: grid;
+  grid-template-columns: 2.25fr 1.1fr 0.8fr 0.8fr auto;
+  gap: 0.7rem;
+  align-items: end;
+}
+
+.registry-field {
+  display: grid;
+  gap: 0.36rem;
+  margin: 0;
+}
+
+.registry-field span {
+  color: #1f2e46;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 800;
+}
+
+.registry-input-wrap {
+  position: relative;
+}
+
+.registry-field-location .registry-input-wrap::before {
+  content: "";
+  position: absolute;
+  left: 0.82rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 999px;
+  background: #69798f;
+  box-shadow: 0 0 0 2px rgba(105, 121, 143, 0.2);
+}
+
+.registry-field-location .input {
+  padding-left: 2rem !important;
+}
+
+.properties-buy-mode .registry-filter-form .input,
+.properties-buy-mode .registry-filter-form select {
+  border: 1px solid #d5deea;
+  border-radius: 10px;
+  padding: 0.78rem 0.75rem;
+  height: 50px;
+  background: #f3f6fb;
+  box-shadow: none;
+  transform: none;
+  color: #2a3b55;
+}
+
+.properties-buy-mode .registry-filter-form .btn {
+  height: 50px;
+  border-radius: 999px;
+  padding-inline: 1.8rem;
+  min-width: 128px;
+  font-size: 1.1rem;
+}
+
+.registry-field-mini .input {
+  text-align: center;
+  font-weight: 700;
+}
+
+.properties-buy-mode #property-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.properties-buy-mode .registry-card {
+  display: grid;
+  grid-template-columns: minmax(240px, 34%) 1fr;
+  gap: 0;
+  border: 1px solid #dbe5f2;
+  border-radius: 14px;
+  padding: 0;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.properties-buy-mode .registry-card:hover {
+  transform: translateY(-3px);
+}
+
+.properties-buy-mode .registry-media {
+  height: 290px;
+  min-height: 290px;
+  border: none;
+  border-radius: 0;
+  margin: 0;
+}
+
+.properties-buy-mode .registry-info {
+  padding: 1rem 1.15rem;
+  display: grid;
+  gap: 0.9rem;
+  align-content: start;
+}
+
+.registry-topline {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.8rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5ebf4;
+}
+
+.registry-class {
+  margin: 0;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: #586a84;
+}
+
+.registry-title {
+  margin: 0.22rem 0 0.2rem;
+  font-size: clamp(1.45rem, 3vw, 2.35rem);
+  letter-spacing: -0.02em;
+  color: #102242;
+}
+
+.registry-location {
+  margin: 0;
+  color: #5c6d84;
+  font-size: 0.95rem;
+}
+
+.registry-price {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  color: #102242;
+}
+
+.registry-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.registry-meta-label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+  color: #6f7f96;
+  font-weight: 700;
+}
+
+.registry-meta-value {
+  margin: 0.2rem 0 0;
+  color: #1a2c4d;
+  font-weight: 700;
+  font-size: 0.94rem;
+}
+
+.registry-actions {
+  margin-top: 0.1rem;
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.registry-actions .btn {
+  border-radius: 999px;
+}
+
+@media (max-width: 980px) {
+  .registry-filter-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .registry-filter-form .btn {
+    grid-column: span 2;
+  }
+
+  .properties-buy-mode .registry-card {
+    grid-template-columns: 1fr;
+  }
+
+  .properties-buy-mode .registry-media {
+    height: 230px;
+    min-height: 230px;
+  }
+
+  .registry-meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .registry-filter-form {
+    grid-template-columns: 1fr;
+  }
+
+  .registry-filter-form .btn {
+    grid-column: auto;
+  }
+
+  .registry-topline {
+    grid-template-columns: 1fr;
+  }
+
+  .registry-meta-grid {
+    grid-template-columns: 1fr;
+  }
+}

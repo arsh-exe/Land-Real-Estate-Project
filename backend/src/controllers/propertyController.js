@@ -96,7 +96,10 @@ const listProperties = async (req, res, next) => {
     } = req.query;
 
     const filter = {};
-    if (location) filter.location = { $regex: location, $options: "i" };
+    if (location) {
+      const safeLocation = location.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      filter.location = { $regex: safeLocation, $options: "i" };
+    }
     if (type) filter.type = type;
     if (minPrice || maxPrice) {
       filter.price = {};
@@ -134,7 +137,10 @@ const listAllProperties = async (req, res, next) => {
     } = req.query;
 
     const filter = {};
-    if (location) filter.location = { $regex: location, $options: "i" };
+    if (location) {
+      const safeLocation = location.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      filter.location = { $regex: safeLocation, $options: "i" };
+    }
     if (type) filter.type = type;
     if (minPrice || maxPrice) {
       filter.price = {};

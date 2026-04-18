@@ -143,6 +143,31 @@ const officerDecision = async (req, res, next) => {
         },
         { new: true }
       );
+
+      // Auto-reject any other competing pending requests for this property
+      await Registration.updateMany(
+        { property: property._id, finalStatus: "Pending", _id: { $ne: registration._id } },
+        {
+          $set: {
+            finalStatus: "Rejected",
+            "officerDecision.status": "Rejected",
+            "officerDecision.note": "Auto-rejected: Property transferred to another buyer",
+            "officerDecision.date": new Date(),
+            "officerDecision.officer": req.user._id,
+          },
+        }
+      );
+
+      // Auto-reject any corresponding pending transactions
+      await Transaction.updateMany(
+        { property: property._id, status: "Pending", registration: { $ne: registration._id } },
+        {
+          $set: {
+            status: "Rejected",
+            note: "Auto-rejected: Property transferred to another buyer",
+          },
+        }
+      );
     } else {
       await Transaction.findOneAndUpdate(
         { registration: registration._id },

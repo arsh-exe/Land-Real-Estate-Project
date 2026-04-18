@@ -267,17 +267,32 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
 const loadPropertyDetails = async () => {
   if (!detailsRoot) return;
 
-  const params = new URLSearchParams(window.location.search);
-  const pathMatch = window.location.pathname.match(/property-details\/(.+)$/);
-  const idFromPath = pathMatch?.[1] ? decodeURIComponent(pathMatch[1]) : "";
-  const id = params.get("id") || idFromPath || sessionStorage.getItem("selectedPropertyId");
+  const urlParams = new URL(window.location.href);
+  let id = urlParams.searchParams.get("id");
+
+  if (!id) {
+    const pathMatch = window.location.pathname.match(/property-details\/(.+)$/);
+    if (pathMatch && pathMatch[1]) {
+      id = decodeURIComponent(pathMatch[1]);
+    }
+  }
+
+  if (!id) {
+    id = sessionStorage.getItem("selectedPropertyId");
+  }
+
+  // Handle JS stringified null/undefined that can bypass falsy checks
+  if (id === "undefined" || id === "null" || id === "[object Object]") {
+    id = "";
+  }
 
   if (!id) {
     detailsRoot.innerHTML = `
       <article class="card" style="max-width: 560px;">
         <h3 style="margin-top: 0;">Property id is missing</h3>
         <p>Please open a property from the listings page to view full details.</p>
-        <a href="/pages/properties.html" class="btn btn-primary">Go to Properties</a>
+        <p class="text-muted" style="margin-top:0.5rem; font-size:0.875rem;">Debug: If you arrived here from a valid link, the URL parameter was lost.</p>
+        <a href="/pages/properties.html" class="btn btn-primary" style="margin-top:1rem;">Go to Properties</a>
       </article>
     `;
     return;

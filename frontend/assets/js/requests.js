@@ -180,7 +180,26 @@ const bindWorkflowActions = () => {
       }
     });
   });
+
+  requestsRoot.querySelectorAll(".rw-nav a").forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const href = link.getAttribute("href");
+      if (href) {
+        window.history.pushState({}, "", href);
+        loadRequestsWorkflow({ softLoad: true });
+      }
+    });
+  });
 };
+
+window.addEventListener("popstate", () => {
+  if (window.location.pathname.includes("requests")) {
+    loadRequestsWorkflow({ softLoad: true });
+  }
+});
+
+let cachedWorkflowData = null;
 
 const renderWorkflow = ({ role, userId, registrations, transactions, pendingProperties }) => {
   const section = getQuerySection();
@@ -225,28 +244,7 @@ const renderWorkflow = ({ role, userId, registrations, transactions, pendingProp
 
   requestsRoot.innerHTML = `
     <section class="rw-shell">
-      <aside class="rw-side">
-        <div>
-          <h3>Land Registry</h3>
-          <p>Official Portal</p>
-        </div>
 
-        <a class="btn btn-primary rw-new-btn" href="/pages/properties?view=add">New Registration</a>
-
-        <nav class="rw-nav" aria-label="Request page navigation">
-          ${sideLinks
-            .map(
-              (item) =>
-                `<a class="${item.active ? "active" : ""}" href="/pages/requests.html${item.key !== "pending" ? `?section=${item.key}` : ""}"><span>◈</span>${item.label}</a>`
-            )
-            .join("")}
-        </nav>
-
-        <div class="rw-support">
-          <a href="#">Support</a>
-          <a href="#">Legal Documentation</a>
-        </div>
-      </aside>
 
       <section class="rw-center">
         <header class="rw-header">
@@ -447,8 +445,15 @@ const renderWorkflow = ({ role, userId, registrations, transactions, pendingProp
   bindWorkflowActions();
 };
 
-const loadRequestsWorkflow = async () => {
+const loadRequestsWorkflow = async (options = {}) => {
   if (!requestsRoot) return;
+
+  const { softLoad = false } = options;
+
+  if (softLoad && cachedWorkflowData) {
+    renderWorkflow(cachedWorkflowData);
+    return;
+  }
 
   requestsRoot.innerHTML = `
     <section class="rw-shell">
@@ -471,13 +476,15 @@ const loadRequestsWorkflow = async () => {
         : Promise.resolve({ properties: [] }),
     ]);
 
-    renderWorkflow({
+    cachedWorkflowData = {
       role,
       userId,
       registrations: registrationData?.registrations || [],
       transactions: transactionData?.transactions || [],
       pendingProperties: propertyApprovalData?.properties || [],
-    });
+    };
+
+    renderWorkflow(cachedWorkflowData);
   } catch (error) {
     requestsRoot.innerHTML = `<p style="color:var(--danger); padding:1rem;">${error.message}</p>`;
     showToast(error.message, "error");

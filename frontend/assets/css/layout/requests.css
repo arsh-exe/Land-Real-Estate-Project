@@ -13,7 +13,7 @@ body.requests-page {
 
 .rw-shell {
   display: grid;
-  grid-template-columns: 260px minmax(0, 2.1fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
   gap: 1.5rem;
 }
 

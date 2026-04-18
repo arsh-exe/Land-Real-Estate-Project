@@ -21,6 +21,7 @@
 @import url("./components/badges.css");
 @import url("./components/toasts.css");
 @import url("./components/skeletons.css");
+@import url("./components/modals.css");
 
 /* 4. Utilities */
 @import url("./utilities/animations.css");

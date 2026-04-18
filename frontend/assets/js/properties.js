@@ -862,8 +862,9 @@ const loadProperties = async (query = "") => {
       apiRequest("/registrations").catch(() => ({ registrations: [] })),
     ]);
 
+    const properties = propertyData.properties || [];
     const statusMap = buildPropertyStatusMap(registrationData.registrations || []);
-    renderProperties(propertyData.properties || [], statusMap);
+    renderProperties(properties, statusMap);
   } catch (error) {
     propertyList.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
     showToast(error.message, "error");
@@ -877,12 +878,26 @@ propertyFilterForm?.addEventListener("submit", async (event) => {
   await loadProperties(query);
 });
 
+let filterDebounceTimeout;
+propertyFilterForm?.addEventListener("input", () => {
+  clearTimeout(filterDebounceTimeout);
+  filterDebounceTimeout = setTimeout(() => {
+    propertyFilterForm.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+  }, 400);
+});
+
 addPropertyForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const output = document.getElementById("property-form-message");
 
   try {
     const formData = new FormData(addPropertyForm);
+    if (propertyDocumentsInput && propertyDocumentsInput.files) {
+      Array.from(propertyDocumentsInput.files).forEach((file) => formData.append("documents", file));
+    }
+    if (propertyImagesInput && propertyImagesInput.files) {
+      Array.from(propertyImagesInput.files).forEach((file) => formData.append("images", file));
+    }
     await apiRequest("/properties", {
       method: "POST",
       body: formData,
@@ -920,6 +935,12 @@ sellPropertyForm?.addEventListener("submit", async (event) => {
 
   try {
     const formData = new FormData(sellPropertyForm);
+    if (sellDocumentsInput && sellDocumentsInput.files) {
+      Array.from(sellDocumentsInput.files).forEach((file) => formData.append("documents", file));
+    }
+    if (sellImagesInput && sellImagesInput.files) {
+      Array.from(sellImagesInput.files).forEach((file) => formData.append("images", file));
+    }
     await apiRequest(`/properties/${editingPropertyId}`, {
       method: "PUT",
       body: formData,

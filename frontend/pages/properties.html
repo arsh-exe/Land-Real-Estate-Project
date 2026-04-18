@@ -20,7 +20,7 @@
           <label class="registry-field registry-field-location">
             <span>Location Designation</span>
             <div class="registry-input-wrap">
-              <input class="input" name="location" placeholder="Enter Region, District or Parcel ID" />
+              <input class="input" name="location" autocomplete="off" placeholder="Enter Region, District or Parcel ID" />
             </div>
           </label>
 
@@ -139,6 +139,74 @@
         <h3>Property Listings</h3>
         <div id="property-list" class="list"></div>
       </section>
+
+      <!-- Sell Modal -->
+      <div id="sell-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-content card">
+          <header class="modal-header">
+            <h2 id="sell-modal-title">Want to Sell: Update Property Details</h2>
+            <button type="button" class="modal-close-btn" id="sell-modal-close" aria-label="Close modal">&times;</button>
+          </header>
+          <div class="modal-body">
+            <p id="sell-form-message" class="text-muted mb-1"></p>
+            <form id="sell-property-form" enctype="multipart/form-data">
+              <div class="property-add-fields">
+                <label class="property-field">
+                  <span>Property Title</span>
+                  <input class="input" id="sell-title" name="title" required />
+                </label>
+                <label class="property-field">
+                  <span>Location</span>
+                  <input class="input" id="sell-location" name="location" required />
+                </label>
+                <label class="property-field">
+                  <span>Property Type</span>
+                  <select id="sell-type" name="type" class="input" required>
+                    <option value="Residential">Residential</option>
+                    <option value="Commercial">Commercial</option>
+                    <option value="Agricultural">Agricultural</option>
+                    <option value="Industrial">Industrial</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+                <label class="property-field">
+                  <span>Price</span>
+                  <input class="input" id="sell-price" name="price" type="number" required />
+                </label>
+                <label class="property-field property-field-full">
+                  <span>Area (sq.ft)</span>
+                  <input class="input" id="sell-area" name="area" type="number" required />
+                </label>
+              </div>
+              
+              <div class="modal-uploads mt-1">
+                <section class="property-upload-card" style="padding: 1rem;">
+                  <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Update Documents</h3>
+                  <label class="upload-drop" for="sell-documents" style="min-height: 80px; padding: 0.5rem;">
+                    <input class="input" id="sell-documents" name="documents" type="file" multiple />
+                    <strong>Click to browse</strong>
+                  </label>
+                  <div id="sell-documents-selected" class="file-chip-list"></div>
+                  <button id="clear-sell-documents" class="btn btn-outline btn-sm" style="margin-top:0.6rem;" type="button">Clear Documents</button>
+                </section>
+                <section class="property-upload-card mt-1" style="padding: 1rem; margin-top: 1rem;">
+                  <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Update Images</h3>
+                  <label class="upload-drop" for="sell-images" style="min-height: 80px; padding: 0.5rem;">
+                    <input class="input" id="sell-images" name="images" type="file" multiple accept="image/*" />
+                    <strong>Add Images</strong>
+                  </label>
+                  <div id="sell-images-selected" class="file-chip-list"></div>
+                  <button id="clear-sell-images" class="btn btn-outline btn-sm" style="margin-top:0.6rem;" type="button">Clear Images</button>
+                </section>
+              </div>
+
+              <footer class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; border-top: 1px solid #e0e6ef; padding-top: 1rem;">
+                <button type="submit" class="btn btn-primary">Save Property Updates</button>
+              </footer>
+            </form>
+          </div>
+        </div>
+      </div>
     </main>
 
     <footer class="footer">Property records and submission workflows</footer>

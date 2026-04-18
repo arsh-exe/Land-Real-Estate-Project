@@ -206,14 +206,17 @@ const renderWorkspace = (role, data) => {
     ? toCurrency(data.totalAssetsValue || 0)
     : toCurrency((data.propertiesCount || 0) * 1000000);
 
-  dashboardRoot.innerHTML = `
-    <aside class="svd-sidebar">
-      <div class="svd-brand">
-        <h2>National Portal</h2>
-        <p>Land Registry Bureau</p>
-      </div>
+  const isGov = role === "Admin" || role === "Government Officer";
 
-      <nav class="svd-nav" aria-label="Dashboard Navigation">
+  const navHtml = isGov
+    ? `
+        <a class="active" href="/pages/dashboard.html"><span class="svd-nav-icon">■</span>Dashboard</a>
+        <a href="/pages/requests?verify=1"><span class="svd-nav-icon">▣</span>Verify Requests</a>
+        <a href="/pages/properties.html"><span class="svd-nav-icon">▤</span>All Properties</a>
+        <a href="/pages/admin-dashboard.html"><span class="svd-nav-icon">▦</span>Users</a>
+        <a href="#logout" data-action="logout"><span class="svd-nav-icon">●</span>Logout</a>
+      `
+    : `
         <a class="active" href="/pages/dashboard.html"><span class="svd-nav-icon">■</span>Dashboard</a>
         <a href="/pages/properties?view=add"><span class="svd-nav-icon">▣</span>Add Property</a>
         <a href="/pages/properties.html"><span class="svd-nav-icon">▤</span>Buy</a>
@@ -221,10 +224,25 @@ const renderWorkspace = (role, data) => {
         <a href="/pages/properties?view=selling"><span class="svd-nav-icon">▧</span>Currently Selling</a>
         <a href="/pages/requests.html"><span class="svd-nav-icon">◍</span>Requests</a>
         <a href="#logout" data-action="logout"><span class="svd-nav-icon">●</span>Logout</a>
+      `;
+
+  const ctaHtml = isGov
+    ? `<a class="btn btn-primary" href="/pages/requests.html">Verify Requests</a>`
+    : `<a class="btn btn-primary" href="/pages/requests.html">Track Requests</a>`;
+
+  dashboardRoot.innerHTML = `
+    <aside class="svd-sidebar">
+      <div class="svd-brand">
+        <h2>Land Registry</h2>
+        <p>Official Portal</p>
+      </div>
+
+      <nav class="svd-nav" aria-label="Dashboard Navigation">
+        ${navHtml}
       </nav>
 
       <div class="svd-sidebar-cta">
-        <a class="btn btn-primary" href="/pages/requests.html">Track Requests</a>
+        ${ctaHtml}
       </div>
     </aside>
 
@@ -232,9 +250,6 @@ const renderWorkspace = (role, data) => {
       <header class="svd-topbar">
         <h2 class="svd-topbar-title">The Sovereign Archive</h2>
         <div class="svd-topbar-actions">
-          <input class="svd-search" type="search" placeholder="Search archives..." aria-label="Search archives" />
-          <span class="svd-pill-icon" aria-hidden="true">!</span>
-          <span class="svd-pill-icon" aria-hidden="true">?</span>
           <span class="svd-avatar" aria-label="${user?.fullName || "User"}">${avatar}</span>
         </div>
       </header>

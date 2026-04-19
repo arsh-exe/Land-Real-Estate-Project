@@ -196,11 +196,9 @@ const renderWorkspace = (role, data) => {
 
   const metrics = getMetricSet(role, data);
   const activityItems = buildActivityFeed(role, data);
-  const split = getPortfolioSplit(data.myProperties || []);
+  const split = getPortfolioSplit(role === "User" ? data.myProperties || [] : data.allProperties || []);
 
-  const assetValue = role === "User"
-    ? toCurrency(data.totalAssetsValue || 0)
-    : toCurrency((data.propertiesCount || 0) * 1000000);
+  const assetValue = toCurrency(data.totalAssetsValue || 0);
 
   const isGov = role === "Admin" || role === "Government Officer";
 

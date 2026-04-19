@@ -45,6 +45,9 @@ const getDashboardData = async (req, res, next) => {
         myRequests,
       };
     } else {
+      const allProperties = await Property.find({}, 'type price');
+      const totalAssetsValue = allProperties.reduce((sum, p) => sum + (p.price || 0), 0);
+
       data = {
         usersCount: await User.countDocuments(),
         propertiesCount: await Property.countDocuments(),
@@ -60,6 +63,8 @@ const getDashboardData = async (req, res, next) => {
           .populate("registration", "registrationId finalStatus")
           .sort({ createdAt: -1 })
           .limit(12),
+        allProperties,
+        totalAssetsValue,
       };
     }
 

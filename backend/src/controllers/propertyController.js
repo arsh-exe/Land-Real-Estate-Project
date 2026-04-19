@@ -53,7 +53,7 @@ const createProperty = async (req, res, next) => {
           Document.create({
             documentId: generateId("DOC"),
             originalName: file.originalname,
-            filePath: `/uploads/${file.filename}`,
+            filePath: file.path,
             mimeType: file.mimetype,
             size: file.size,
             uploadedBy: req.user._id,
@@ -243,7 +243,7 @@ const updateProperty = async (req, res, next) => {
           Document.create({
             documentId: generateId("DOC"),
             originalName: file.originalname,
-            filePath: `/uploads/${file.filename}`,
+            filePath: file.path,
             mimeType: file.mimetype,
             size: file.size,
             uploadedBy: req.user._id,

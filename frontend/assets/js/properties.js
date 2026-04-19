@@ -490,11 +490,11 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
       (property) => {
         const ownerId = property?.owner?._id || property?.owner?.id || property?.owner;
         const isOwner = currentUser && String(ownerId) === String(currentUser?._id || currentUser?.id);
-        const imageUrls = Array.isArray(property.images)
-          ? property.images
+        const imageUrls = Array.isArray(property.images) && property.images.length > 0
+          ? property.images.map((img) => typeof img === 'string' && img.startsWith("http") ? img : `${SERVER_URL}${img}`)
           : getImageDocuments(property)
               .filter((doc) => Boolean(doc?.filePath))
-              .map((doc) => `${SERVER_URL}${doc.filePath}`);
+              .map((doc) => doc.filePath.startsWith("http") ? doc.filePath : `${SERVER_URL}${doc.filePath}`);
         const hasImage = imageUrls.length > 0;
         const encodedImages = hasImage ? encodeURIComponent(JSON.stringify(imageUrls)) : "";
 

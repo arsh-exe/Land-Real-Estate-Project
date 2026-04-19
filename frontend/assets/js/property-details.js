@@ -47,7 +47,7 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
   const imageDocs = getImageDocuments(property);
   const imageUrls = [
     ...(Array.isArray(property.images) ? property.images.map(resolveImageUrl) : []),
-    ...imageDocs.map((doc) => `${SERVER_URL}${doc.filePath}`),
+    ...imageDocs.map((doc) => doc.filePath.startsWith("http") ? doc.filePath : `${SERVER_URL}${doc.filePath}`),
   ].filter(Boolean);
 
   const galleryImages = [...new Set(imageUrls)];
@@ -94,7 +94,7 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
                 <p class="pd3-doc-title">${doc.originalName || "Registry Document"}</p>
                 <p class="pd3-doc-meta">${doc.mimeType || "PDF"}</p>
               </div>
-              <a class="pd3-doc-link" href="${SERVER_URL}${doc.filePath}" target="_blank" rel="noopener noreferrer">↓</a>
+              <a class="pd3-doc-link" href="${doc.filePath?.startsWith('http') ? doc.filePath : `${SERVER_URL}${doc.filePath}`}" target="_blank" rel="noopener noreferrer">↓</a>
             </article>
           `
         )

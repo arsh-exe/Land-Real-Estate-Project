@@ -221,15 +221,14 @@ const renderWorkflow = ({ role, userId, registrations, transactions, pendingProp
   const rejectedCount = rejected.length;
 
   const prioritySource = section === "approved" ? approved : section === "rejected" ? rejected : pending;
-  const priorityCards = prioritySource.slice(0, 2);
+  const priorityCards = prioritySource;
 
-  const approvalFeed = approved.slice(0, 3);
-  const rejectedFeed = rejected.slice(0, 4);
-  const txFeed = (transactions || []).slice(0, 5);
+  const approvalFeed = approved;
+  const rejectedFeed = rejected;
+  const txFeed = transactions || [];
   const timelineFeed = registrations
     .slice()
-    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0))
-    .slice(0, 6);
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
 
   const sideLinks = [
     { key: "pending", label: "Pending Requests", active: section !== "approved" && section !== "rejected" },
@@ -239,7 +238,7 @@ const renderWorkflow = ({ role, userId, registrations, transactions, pendingProp
   ];
 
   const propertyApprovalCards = ["admin", "government officer"].includes(role)
-    ? (pendingProperties || []).slice(0, 2)
+    ? pendingProperties || []
     : [];
 
   requestsRoot.innerHTML = `
@@ -252,13 +251,11 @@ const renderWorkflow = ({ role, userId, registrations, transactions, pendingProp
             <h1>Registration Workflow</h1>
             <p>Manage and process active land registrations, title transfers, and historical transactions.</p>
           </div>
-          <button class="btn btn-outline rw-filter-btn" type="button" disabled>Filter Views</button>
         </header>
 
         <article class="rw-panel">
           <div class="rw-panel-title">
             <h2>Priority Pending</h2>
-            <a href="/pages/requests.html">View All -></a>
           </div>
 
           <div class="rw-priority-grid">
@@ -349,7 +346,6 @@ const renderWorkflow = ({ role, userId, registrations, transactions, pendingProp
         <article class="rw-panel">
           <div class="rw-panel-title">
             <h2>Rejected Filings</h2>
-            <a href="/pages/requests.html?section=rejected">View All -></a>
           </div>
 
           <div class="rw-approval-list">
@@ -436,7 +432,6 @@ const renderWorkflow = ({ role, userId, registrations, transactions, pendingProp
                 : `<p class="rw-empty">No transaction records available.</p>`
             }
           </div>
-          <button class="btn btn-outline btn-sm" type="button" style="margin-top:0.7rem; width:100%;" disabled>View Full Audit Log</button>
         </article>
       </aside>
     </section>

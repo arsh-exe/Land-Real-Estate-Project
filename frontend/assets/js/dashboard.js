@@ -88,11 +88,7 @@ const getRoleLabel = (role) => {
 const getPortfolioSplit = (properties = []) => {
   const total = properties.length;
   if (!total) {
-    return [
-      { label: "Commercial", percent: 60, color: "#001f54" },
-      { label: "Residential", percent: 25, color: "#4b7085" },
-      { label: "Agricultural", percent: 15, color: "#7a7f8a" },
-    ];
+    return [];
   }
 
   const counts = properties.reduce((acc, property) => {
@@ -328,7 +324,9 @@ const renderWorkspace = (role, data) => {
 
             <div class="svd-allocation-graph" aria-label="Portfolio allocation graph" style="margin: 1.5rem 0;">
               ${(function() {
-                if (!split || split.length === 0) return '';
+                if (!split || split.length === 0) {
+                  return '<div style="padding: 2rem; text-align: center; color: #7a7f8a;">No properties in portfolio yet.</div>';
+                }
                 const width = 1000;
                 const height = 100;
                 const maxPercent = Math.max(...split.map(s => s.percent), 10);

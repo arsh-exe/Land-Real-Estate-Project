@@ -1,4 +1,4 @@
-const SERVER_URL = "http://localhost:5000";
+const SERVER_URL = "https://land-real-estate-project-production.up.railway.app";
 const API_BASE_URL = `${SERVER_URL}/api`;
 
 const getToken = () => localStorage.getItem("lrs_token");

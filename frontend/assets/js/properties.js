@@ -889,8 +889,14 @@ propertyFilterForm?.addEventListener("input", () => {
 addPropertyForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const output = document.getElementById("property-form-message");
+  const submitBtn = document.getElementById("property-form-submit");
 
   try {
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Uploading & Saving...";
+    }
+
     const formData = new FormData(addPropertyForm);
     if (propertyDocumentsInput && propertyDocumentsInput.files) {
       Array.from(propertyDocumentsInput.files).forEach((file) => formData.append("documents", file));
@@ -923,6 +929,11 @@ addPropertyForm?.addEventListener("submit", async (event) => {
   } catch (error) {
     output.textContent = error.message;
     output.style.color = "#b42318";
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Save Property";
+    }
   }
 });
 

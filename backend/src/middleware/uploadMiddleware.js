@@ -15,7 +15,7 @@ const storage = new CloudinaryStorage({
     return {
       folder: "land_registry_uploads",
       resource_type: "auto",
-      public_id: `${Date.now()}-${file.originalname.split('.')[0].replace(/\\s+/g, "_")}`,
+      public_id: `${Date.now()}-${file.originalname.split('.')[0].replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "")}`,
     };
   },
 });

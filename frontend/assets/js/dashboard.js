@@ -326,12 +326,32 @@ const renderWorkspace = (role, data) => {
               </div>
             </div>
 
-            <div class="svd-allocation-bar" aria-label="Portfolio allocation bar">
-              ${split
-                .map(
-                  (segment) => `<span class="svd-allocation-segment" style="width:${segment.percent}%; background:${segment.color};"></span>`
-                )
-                .join("")}
+            <div class="svd-allocation-graph" aria-label="Portfolio allocation graph" style="margin: 1.5rem 0;">
+              ${(function() {
+                if (!split || split.length === 0) return '';
+                const width = 1000;
+                const height = 100;
+                const maxPercent = Math.max(...split.map(s => s.percent), 10);
+                const getX = (i) => split.length === 1 ? width / 2 : 40 + (i / (split.length - 1)) * (width - 80);
+                const getY = (percent) => height - (percent / maxPercent) * height * 0.6 - 20;
+                
+                const points = split.map((s, i) => `${getX(i)},${getY(s.percent)}`).join(' ');
+                const elements = split.map((s, i) => {
+                  const x = getX(i);
+                  const y = getY(s.percent);
+                  return `
+                    <circle cx="${x}" cy="${y}" r="6" fill="${s.color}" />
+                    <text x="${x}" y="${y - 12}" fill="var(--text)" font-size="14" font-weight="bold" text-anchor="middle">${Math.round(s.percent)}%</text>
+                  `;
+                }).join('');
+                
+                return `
+                  <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: 100%; overflow: visible; display: block;">
+                    <polyline points="${points}" fill="none" stroke="#001f54" stroke-width="3" />
+                    ${elements}
+                  </svg>
+                `;
+              })()}
             </div>
 
             <div class="svd-allocation-legend">

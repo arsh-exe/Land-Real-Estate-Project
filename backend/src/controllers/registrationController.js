@@ -1,6 +1,7 @@
 const Property = require("../models/Property");
 const Registration = require("../models/Registration");
 const Transaction = require("../models/Transaction");
+const Notification = require("../models/Notification");
 const generateId = require("../utils/generateId");
 
 const createRequest = async (req, res, next) => {
@@ -45,6 +46,13 @@ const createRequest = async (req, res, next) => {
       note: "Registration request created",
     });
 
+    await Notification.create({
+      recipient: property.owner,
+      message: `A new purchase request has been made for your property: ${property.title}`,
+      type: "info",
+      relatedId: registration._id,
+    });
+
     return res.status(201).json({ message: "Request submitted", registration });
   } catch (error) {
     next(error);
@@ -85,6 +93,13 @@ const sellerDecision = async (req, res, next) => {
     }
 
     await registration.save();
+
+    await Notification.create({
+      recipient: registration.buyer,
+      message: `The seller has ${status.toLowerCase()} your request for property: ${registration.property.title}`,
+      type: status === "Approved" ? "success" : "warning",
+      relatedId: registration._id,
+    });
 
     return res.status(200).json({ message: `Seller marked request as ${status}`, registration });
   } catch (error) {
@@ -177,6 +192,13 @@ const officerDecision = async (req, res, next) => {
     }
 
     await registration.save();
+
+    await Notification.create({
+      recipient: registration.buyer._id,
+      message: `A government officer has ${status.toLowerCase()} your request for property: ${registration.property.title}`,
+      type: status === "Approved" ? "success" : "warning",
+      relatedId: registration._id,
+    });
 
     return res.status(200).json({ message: `Officer marked request as ${status}`, registration });
   } catch (error) {

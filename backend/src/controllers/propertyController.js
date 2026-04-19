@@ -452,6 +452,14 @@ const setPropertyApprovalStatus = async (req, res, next) => {
 
     await property.save();
 
+    const Notification = require("../models/Notification");
+    await Notification.create({
+      recipient: property.owner,
+      message: `Your property "${property.title}" has been ${status.toLowerCase()} by the government review.`,
+      type: status === "Approved" ? "success" : "warning",
+      relatedId: property._id,
+    });
+
     return res.status(200).json({
       message: `Property ${status.toLowerCase()} by government review`,
       property,

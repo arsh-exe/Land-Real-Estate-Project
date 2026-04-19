@@ -14,6 +14,7 @@ const registrationRoutes = require("./routes/registrationRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -79,6 +80,7 @@ app.use("/api/registrations", registrationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

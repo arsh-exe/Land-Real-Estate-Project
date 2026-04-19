@@ -162,6 +162,23 @@ const renderNavbar = () => {
               }" ${isActive ? 'aria-current="page"' : ""}>${item.label}</a>`;
             })
             .join("")}
+          ${user ? `
+            <div class="nav-notification-wrapper" id="notification-wrapper">
+              <button class="nav-notification-btn" id="notification-btn" aria-label="Notifications">
+                <span class="bell-icon">🔔</span>
+                <span class="notification-badge" id="notification-badge" style="display:none">0</span>
+              </button>
+              <div class="notification-dropdown" id="notification-dropdown">
+                <div class="notification-header">
+                  <h4>Notifications</h4>
+                  <button class="btn btn-sm" id="mark-all-read-btn">Mark all read</button>
+                </div>
+                <div class="notification-list" id="notification-list">
+                  <div class="notification-loading">Loading...</div>
+                </div>
+              </div>
+            </div>
+          ` : ""}
         </div>
       </div>
     </nav>
@@ -170,6 +187,10 @@ const renderNavbar = () => {
   document.getElementById("nav-toggle")?.addEventListener("click", () => {
     document.getElementById("nav-links")?.classList.toggle("open");
   });
+
+  if (user) {
+    setupNotifications();
+  }
 
   root.querySelectorAll("[data-action='logout']").forEach((button) => {
     button.addEventListener("click", async (event) => {
@@ -186,6 +207,92 @@ const renderNavbar = () => {
     });
   });
 };
+
+const setupNotifications = async () => {
+  const wrapper = document.getElementById("notification-wrapper");
+  const btn = document.getElementById("notification-btn");
+  const dropdown = document.getElementById("notification-dropdown");
+  const list = document.getElementById("notification-list");
+  const badge = document.getElementById("notification-badge");
+  const markAllBtn = document.getElementById("mark-all-read-btn");
+
+  if (!btn || !dropdown) return;
+
+  btn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("show");
+    if (dropdown.classList.contains("show")) {
+      await fetchAndRenderNotifications();
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!wrapper.contains(e.target)) {
+      dropdown.classList.remove("show");
+    }
+  });
+
+  markAllBtn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    try {
+      await apiRequest("/notifications/read-all", { method: "PATCH" });
+      await fetchAndRenderNotifications();
+    } catch (err) {
+      console.error(err);
+    }
+  });
+
+  const renderNotificationItem = (n) => `
+    <div class="notification-item ${n.isRead ? 'read' : 'unread'}" data-id="${n._id}">
+      <div class="notification-icon ${n.type}">${n.type === 'success' ? '✅' : n.type === 'warning' ? '⚠️' : 'ℹ️'}</div>
+      <div class="notification-content">
+        <p>${n.message}</p>
+        <small>${new Date(n.createdAt).toLocaleDateString()}</small>
+      </div>
+    </div>
+  `;
+
+  const fetchAndRenderNotifications = async () => {
+    try {
+      const data = await apiRequest("/notifications");
+      const notifications = data.notifications || [];
+      const unreadCount = notifications.filter(n => !n.isRead).length;
+
+      if (unreadCount > 0) {
+        badge.style.display = 'flex';
+        badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+      } else {
+        badge.style.display = 'none';
+      }
+
+      if (notifications.length === 0) {
+        list.innerHTML = `<div class="notification-empty">No notifications</div>`;
+        return;
+      }
+
+      list.innerHTML = notifications.map(renderNotificationItem).join("");
+
+      list.querySelectorAll(".notification-item.unread").forEach(item => {
+        item.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const id = item.dataset.id;
+          try {
+            await apiRequest(`/notifications/${id}/read`, { method: "PATCH" });
+            await fetchAndRenderNotifications();
+          } catch (err) {
+            console.error(err);
+          }
+        });
+      });
+    } catch (err) {
+      list.innerHTML = `<div class="notification-empty">Failed to load notifications</div>`;
+    }
+  };
+
+  // Initial fetch to get unread count
+  await fetchAndRenderNotifications();
+};
+window.setupNotifications = setupNotifications;
 
 const enforceAuthOnPage = () => {
   const requirement = document.body.dataset.auth || "public";

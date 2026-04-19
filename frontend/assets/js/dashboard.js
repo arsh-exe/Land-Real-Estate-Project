@@ -250,6 +250,21 @@ const renderWorkspace = (role, data) => {
       <header class="svd-topbar">
         <h2 class="svd-topbar-title">The Sovereign Archive</h2>
         <div class="svd-topbar-actions">
+          <div class="nav-notification-wrapper" id="notification-wrapper">
+            <button class="nav-notification-btn" id="notification-btn" aria-label="Notifications" style="margin-right: 15px;">
+              <span class="bell-icon">🔔</span>
+              <span class="notification-badge" id="notification-badge" style="display:none">0</span>
+            </button>
+            <div class="notification-dropdown" id="notification-dropdown">
+              <div class="notification-header">
+                <h4>Notifications</h4>
+                <button class="btn btn-sm" id="mark-all-read-btn">Mark all read</button>
+              </div>
+              <div class="notification-list" id="notification-list">
+                <div class="notification-loading">Loading...</div>
+              </div>
+            </div>
+          </div>
           <span class="svd-avatar" aria-label="${user?.fullName || "User"}">${avatar}</span>
         </div>
       </header>
@@ -338,6 +353,9 @@ const renderWorkspace = (role, data) => {
   `;
 
   bindSidebarActions();
+  if (window.setupNotifications) {
+    window.setupNotifications();
+  }
 };
 
 const renderLoading = () => {

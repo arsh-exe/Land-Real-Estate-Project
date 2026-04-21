@@ -206,7 +206,13 @@ const renderWorkflow = ({ role, userId, registrations, transactions, pendingProp
 
   const pending = registrations
     .filter((item) => String(item.finalStatus || "Pending").toLowerCase() === "pending")
-    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    .sort((a, b) => {
+      const aCanAct = canSellerAct(role, a, userId) || canOfficerAct(role, a);
+      const bCanAct = canSellerAct(role, b, userId) || canOfficerAct(role, b);
+      if (aCanAct && !bCanAct) return -1;
+      if (!aCanAct && bCanAct) return 1;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
 
   const approved = registrations
     .filter((item) => String(item.finalStatus || "Pending").toLowerCase() === "approved")
@@ -260,31 +266,6 @@ const renderWorkflow = ({ role, userId, registrations, transactions, pendingProp
 
           <div class="rw-priority-grid">
             ${
-              priorityCards.length
-                ? priorityCards
-                    .map((request) => {
-                      const tag = pendingTag(request);
-                      return `
-                        <article class="rw-priority-card ${tag.className}">
-                          <p class="rw-request-id">${request.registrationId || "REG-REQUEST"}</p>
-                          <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-top:0.2rem;">
-                            <p class="rw-request-title">${request.property?.title || "Property"}</p>
-                            <span class="rw-pill ${tag.className}">${tag.label}</span>
-                          </div>
-                          <p class="rw-request-meta">Buyer: ${request.buyer?.fullName || "N/A"}</p>
-                          <p class="rw-request-meta">Seller: ${request.seller?.fullName || "N/A"}</p>
-                          ${renderRequestProgress(request)}
-                          <div class="rw-request-actions">
-                            ${renderRequestActions(request, role, userId)}
-                          </div>
-                        </article>
-                      `;
-                    })
-                    .join("")
-                : `<p class="rw-empty">No priority requests available.</p>`
-            }
-
-            ${
               propertyApprovalCards.length
                 ? propertyApprovalCards
                     .map(
@@ -307,6 +288,31 @@ const renderWorkflow = ({ role, userId, registrations, transactions, pendingProp
                     )
                     .join("")
                 : ""
+            }
+
+            ${
+              priorityCards.length
+                ? priorityCards
+                    .map((request) => {
+                      const tag = pendingTag(request);
+                      return `
+                        <article class="rw-priority-card ${tag.className}">
+                          <p class="rw-request-id">${request.registrationId || "REG-REQUEST"}</p>
+                          <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-top:0.2rem;">
+                            <p class="rw-request-title">${request.property?.title || "Property"}</p>
+                            <span class="rw-pill ${tag.className}">${tag.label}</span>
+                          </div>
+                          <p class="rw-request-meta">Buyer: ${request.buyer?.fullName || "N/A"}</p>
+                          <p class="rw-request-meta">Seller: ${request.seller?.fullName || "N/A"}</p>
+                          ${renderRequestProgress(request)}
+                          <div class="rw-request-actions">
+                            ${renderRequestActions(request, role, userId)}
+                          </div>
+                        </article>
+                      `;
+                    })
+                    .join("")
+                : `<p class="rw-empty">No priority requests available.</p>`
             }
           </div>
         </article>

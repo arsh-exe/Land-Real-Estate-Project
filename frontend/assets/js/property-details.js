@@ -77,10 +77,14 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
   ];
 
   let transferAction = `<button class="btn btn-secondary" disabled>Request Official Transfer</button>`;
-  if (currentRole === "user" && !isOwner && isForSale) {
-    transferAction = `<button class="btn btn-primary" data-request="${property._id}">Request Official Transfer</button>`;
-  } else if (isOwner) {
+  if (isOwner) {
     transferAction = `<button class="btn btn-outline" disabled>Owned by You</button>`;
+  } else if (propertyStatus === "Pending Request") {
+    transferAction = `<button class="btn btn-secondary" disabled>Transfer Pending</button>`;
+  } else if (propertyStatus === "Sold") {
+    transferAction = `<button class="btn btn-secondary" disabled>Sold</button>`;
+  } else if (currentRole === "user" && isForSale) {
+    transferAction = `<button class="btn btn-primary" data-request="${property._id}">Request Official Transfer</button>`;
   }
 
   const docItems = nonImageDocs.length

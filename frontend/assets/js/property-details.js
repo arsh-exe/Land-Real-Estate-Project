@@ -80,7 +80,7 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
   if (isOwner) {
     transferAction = `<button class="btn btn-outline" disabled>Owned by You</button>`;
   } else if (propertyStatus === "Pending Request") {
-    transferAction = `<button class="btn btn-secondary" disabled>Transfer Pending</button>`;
+    transferAction = `<button class="btn btn-secondary" disabled>Request Submitted</button>`;
   } else if (propertyStatus === "Sold") {
     transferAction = `<button class="btn btn-secondary" disabled>Sold</button>`;
   } else if (currentRole === "user" && isForSale) {

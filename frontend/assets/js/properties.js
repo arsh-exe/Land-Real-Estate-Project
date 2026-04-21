@@ -530,12 +530,20 @@ const renderProperties = (properties = [], propertyStatusMap = new Map()) => {
           })
         );
 
-        const buyButtonHtml =
-          currentRole === "user" && !isOwner
-            ? property.isOpenForSale
-              ? `<button class="btn btn-primary btn-sm" data-request="${property._id}">Request to Buy</button>`
-              : `<button class="btn btn-secondary btn-sm" disabled style="cursor:not-allowed; opacity:0.7;">Not For Sale</button>`
-            : "";
+        const propertyStatus = propertyStatusMap.get(String(property._id)) || "available";
+        
+        let buyButtonHtml = "";
+        if (currentRole === "user" && !isOwner) {
+          if (propertyStatus === "sold") {
+            buyButtonHtml = `<button class="btn btn-secondary btn-sm" disabled style="cursor:not-allowed; opacity:0.7;">Sold</button>`;
+          } else if (propertyStatus === "pending request") {
+            buyButtonHtml = `<button class="btn btn-secondary btn-sm" disabled style="cursor:not-allowed; opacity:0.7;">Request Submitted</button>`;
+          } else if (property.isOpenForSale) {
+            buyButtonHtml = `<button class="btn btn-primary btn-sm" data-request="${property._id}">Request to Buy</button>`;
+          } else {
+            buyButtonHtml = `<button class="btn btn-secondary btn-sm" disabled style="cursor:not-allowed; opacity:0.7;">Not For Sale</button>`;
+          }
+        }
 
         const ownerActionsHtml = isOwnerRole
           ? property.isOpenForSale

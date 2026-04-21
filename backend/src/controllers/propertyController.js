@@ -181,20 +181,25 @@ const getPropertyById = async (req, res, next) => {
     }).select("_id");
 
     let propertyStatus = "Available";
+    let activeRegistration = null;
+
     if (approvedRegistration) {
       propertyStatus = "Sold";
     } else {
       const pendingRegistration = await Registration.findOne({
         property: property._id,
         finalStatus: "Pending",
-      }).select("_id");
+      })
+      .populate("buyer", "fullName")
+      .populate("seller", "fullName");
 
       if (pendingRegistration) {
         propertyStatus = "Pending Request";
+        activeRegistration = pendingRegistration;
       }
     }
 
-    return res.status(200).json({ property, propertyStatus });
+    return res.status(200).json({ property, propertyStatus, activeRegistration });
   } catch (error) {
     next(error);
   }

@@ -37,7 +37,110 @@ const formatDate = (value) => {
   return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 };
 
-const renderPropertyDetails = (property, propertyStatus = "Available") => {
+const getRequestProgress = (request) => {
+  const sellerStatus = String(request?.sellerDecision?.status || "Pending").toLowerCase();
+  const finalStatus = String(request?.finalStatus || "Pending").toLowerCase();
+
+  const steps = [
+    { label: "Requested", state: "completed" },
+    { label: "Seller", state: "pending" },
+    { label: "Govt", state: "pending" },
+    { label: "Final", state: "pending" },
+  ];
+
+  let progress = 12;
+
+  if (sellerStatus === "pending") {
+    steps[1].state = "active";
+    progress = 30;
+  } else if (sellerStatus === "approved") {
+    steps[1].state = "completed";
+    progress = 52;
+
+    if (finalStatus === "pending") {
+      steps[2].state = "active";
+      progress = 72;
+    } else if (finalStatus === "approved") {
+      steps[2].state = "completed";
+      steps[3].state = "completed";
+      progress = 100;
+    } else if (finalStatus === "rejected") {
+      steps[2].state = "rejected";
+      steps[3].state = "rejected";
+      progress = 100;
+    }
+  } else if (sellerStatus === "rejected") {
+    steps[1].state = "rejected";
+    steps[3].state = "rejected";
+    progress = 100;
+  }
+
+  return { steps, progress };
+};
+
+const renderRequestProgress = (request) => {
+  const { steps, progress } = getRequestProgress(request);
+
+  return `
+    <div class="rw-progress" aria-label="Request progress" style="margin: 1.5rem 0;">
+      <div class="rw-progress-track">
+        <span class="rw-progress-fill" style="width:${progress}%;"></span>
+      </div>
+      <div class="rw-progress-steps">
+        ${steps
+          .map(
+            (step) => `
+              <span class="rw-step ${step.state}">
+                <span class="rw-step-dot"></span>
+                <span class="rw-step-label">${step.label}</span>
+              </span>
+            `
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+};
+
+const canSellerAct = (role, request, userId) => {
+  const sellerId = request?.seller?._id || request?.seller;
+  return ["user", "seller"].includes(role) && String(sellerId) === String(userId) && request?.sellerDecision?.status === "Pending";
+};
+
+const canOfficerAct = (role, request) =>
+  ["admin", "government officer"].includes(role) &&
+  request?.sellerDecision?.status === "Approved" &&
+  request?.finalStatus === "Pending";
+
+const renderRequestActions = (request, role, userId) => {
+  let html = "";
+
+  if (canSellerAct(role, request, userId)) {
+    html += `
+      <div style="display:flex; gap:0.5rem; justify-content:center; margin-top: 1rem;">
+        <button class="btn btn-primary" data-action="seller" data-status="Approved" data-id="${request._id}">Approve Transfer</button>
+        <button class="btn btn-outline" data-action="seller" data-status="Rejected" data-id="${request._id}">Reject</button>
+      </div>
+    `;
+  } else if (canOfficerAct(role, request)) {
+    html += `
+      <div style="display:flex; gap:0.5rem; justify-content:center; margin-top: 1rem;">
+        <button class="btn btn-primary" data-action="officer" data-status="Approved" data-id="${request._id}">Verify & Approve</button>
+        <button class="btn btn-outline" data-action="officer" data-status="Rejected" data-id="${request._id}">Reject</button>
+      </div>
+    `;
+  } else {
+    html += `
+      <div style="text-align:center; margin-top:1rem;">
+        <button class="btn btn-secondary" disabled>Awaiting Action</button>
+      </div>
+    `;
+  }
+
+  return html;
+};
+
+const renderPropertyDetails = (property, propertyStatus = "Available", activeRegistration = null) => {
   const currentUser = getUser();
   const currentRole = roleKey(currentUser?.role);
   const currentUserId = currentUser?._id || currentUser?.id;
@@ -77,14 +180,39 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
   ];
 
   let transferAction = `<button class="btn btn-secondary" disabled>Request Official Transfer</button>`;
-  if (isOwner) {
-    transferAction = `<button class="btn btn-outline" disabled>Owned by You</button>`;
-  } else if (propertyStatus === "Pending Request") {
-    transferAction = `<button class="btn btn-secondary" disabled>Request Submitted</button>`;
-  } else if (propertyStatus === "Sold") {
-    transferAction = `<button class="btn btn-secondary" disabled>Sold</button>`;
-  } else if (currentRole === "user" && isForSale) {
-    transferAction = `<button class="btn btn-primary" data-request="${property._id}">Request Official Transfer</button>`;
+  let progressBlock = "";
+
+  if (activeRegistration) {
+    const isRelevantUser = 
+      ["admin", "government officer"].includes(currentRole) ||
+      String(activeRegistration.buyer?._id || activeRegistration.buyer) === String(currentUserId) ||
+      String(activeRegistration.seller?._id || activeRegistration.seller) === String(currentUserId);
+      
+    if (isRelevantUser) {
+      transferAction = "";
+      progressBlock = `
+        <article style="border: 1px solid #e4e8ef; padding: 1.25rem; border-radius: 12px; margin-top: 1.5rem; background: #f7f8fb;">
+          <h4 style="margin: 0 0 0.5rem; font-size: 0.95rem; color: #12213f;">Active Transfer Request</h4>
+          <p style="margin: 0; font-size: 0.85rem; color: #69788e;">Buyer: ${activeRegistration.buyer?.fullName || "User"}</p>
+          ${renderRequestProgress(activeRegistration)}
+          ${renderRequestActions(activeRegistration, currentRole, currentUserId)}
+        </article>
+      `;
+    } else {
+      if (propertyStatus === "Pending Request") {
+        transferAction = `<button class="btn btn-secondary" disabled>Request Submitted</button>`;
+      }
+    }
+  } else {
+    if (isOwner) {
+      transferAction = `<button class="btn btn-outline" disabled>Owned by You</button>`;
+    } else if (propertyStatus === "Pending Request") {
+      transferAction = `<button class="btn btn-secondary" disabled>Request Submitted</button>`;
+    } else if (propertyStatus === "Sold") {
+      transferAction = `<button class="btn btn-secondary" disabled>Sold</button>`;
+    } else if (currentRole === "user" && isForSale) {
+      transferAction = `<button class="btn btn-primary" data-request="${property._id}">Request Official Transfer</button>`;
+    }
   }
 
   const docItems = nonImageDocs.length
@@ -158,6 +286,7 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
             ${transferAction}
             <button class="btn btn-outline" type="button" disabled>Contact Registry Agent</button>
           </div>
+          ${progressBlock}
         </aside>
       </section>
 
@@ -264,7 +393,34 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
           body: JSON.stringify({ propertyId: button.dataset.request }),
         });
         showToast("Transfer request submitted successfully", "success");
-        button.textContent = "Request Submitted";
+        loadPropertyDetails();
+      } catch (error) {
+        button.disabled = false;
+        button.textContent = originalText;
+        showToast(error.message, "error");
+      }
+    });
+  });
+
+  detailsRoot.querySelectorAll("[data-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const id = button.dataset.id;
+      const action = button.dataset.action;
+      const status = button.dataset.status;
+      const originalText = button.textContent;
+
+      button.disabled = true;
+      button.textContent = "Processing...";
+
+      const endpoint = action === "seller" ? `/registrations/${id}/seller-decision` : `/registrations/${id}/officer-decision`;
+
+      try {
+        await apiRequest(endpoint, {
+          method: "PATCH",
+          body: JSON.stringify({ status, note: "" }),
+        });
+        showToast(`Request ${status.toLowerCase()} successfully`, "success");
+        loadPropertyDetails();
       } catch (error) {
         button.disabled = false;
         button.textContent = originalText;
@@ -320,7 +476,7 @@ const loadPropertyDetails = async () => {
 
   try {
     const data = await apiRequest(`/properties/${id}`);
-    renderPropertyDetails(data.property, data.propertyStatus || "Available");
+    renderPropertyDetails(data.property, data.propertyStatus || "Available", data.activeRegistration);
   } catch (error) {
     detailsRoot.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
     showToast(error.message, "error");

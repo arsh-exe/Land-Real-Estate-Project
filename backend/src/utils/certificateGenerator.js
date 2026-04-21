@@ -4,6 +4,7 @@ const PDFDocument = require("pdfkit");
 const QRCode = require("qrcode");
 const Document = require("../models/Document");
 const Property = require("../models/Property");
+const User = require("../models/User");
 const generateId = require("./generateId");
 
 const generateAndAttachCertificate = async (propertyId, officerId, transactionData = null) => {

@@ -260,9 +260,9 @@ const renderPropertyDetails = (property, propertyStatus = "Available", activeReg
             ${thumbImages
               .map(
                 (image, index) => `
-                  <button class="pd3-thumb ${index === 0 ? "active" : ""}" type="button" data-image="${image}">
+                  <button class="pd3-thumb ${index === 0 ? "active" : ""}" type="button" data-image="${image}" data-index="${index}">
                     <img src="${image}" alt="Property thumbnail ${index + 1}" loading="lazy" />
-                    ${index === thumbImages.length - 1 && remainingThumbs ? `<span class="pd3-thumb-overlay">+${remainingThumbs} Photos</span>` : ""}
+                    ${index === thumbImages.length - 1 && remainingThumbs ? `<span class="pd3-thumb-overlay" data-open-gallery="true">+${remainingThumbs} Photos</span>` : ""}
                   </button>
                 `
               )
@@ -331,9 +331,12 @@ const renderPropertyDetails = (property, propertyStatus = "Available", activeReg
         </aside>
       </section>
 
-      <div class="pd3-lightbox" aria-hidden="true">
-        <button class="pd3-lightbox-close" type="button" data-lightbox-close aria-label="Close image">×</button>
-        <img class="pd3-lightbox-image" src="" alt="Expanded property image" />
+      <div class="pd3-lightbox" aria-hidden="true" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
+        <button class="pd3-lightbox-close" type="button" data-lightbox-close aria-label="Close image" style="position: absolute; top: 20px; right: 30px; font-size: 40px; color: white; background: none; border: none; cursor: pointer; z-index: 10;">×</button>
+        <button type="button" class="pd3-lightbox-nav prev" aria-label="Previous image" style="position: absolute; top: 50%; left: 20px; transform: translateY(-50%); font-size: 40px; color: white; background: none; border: none; cursor: pointer; padding: 1rem; z-index: 10; opacity: 0.8; transition: opacity 0.2s;">&#10094;</button>
+        <button type="button" class="pd3-lightbox-nav next" aria-label="Next image" style="position: absolute; top: 50%; right: 20px; transform: translateY(-50%); font-size: 40px; color: white; background: none; border: none; cursor: pointer; padding: 1rem; z-index: 10; opacity: 0.8; transition: opacity 0.2s;">&#10095;</button>
+        <img class="pd3-lightbox-image" src="" alt="Expanded property image" style="max-height: 85vh; max-width: 90vw; object-fit: contain;" />
+        <div class="pd3-lightbox-counter" style="color: white; margin-top: 1rem; font-size: 1.1rem; font-weight: 500;">1 / ${galleryImages.length}</div>
       </div>
     </section>
   `;
@@ -343,10 +346,23 @@ const renderPropertyDetails = (property, propertyStatus = "Available", activeReg
   const mainImageWrap = detailsRoot.querySelector(".pd3-main-image-wrap");
   const lightbox = detailsRoot.querySelector(".pd3-lightbox");
   const lightboxImage = detailsRoot.querySelector(".pd3-lightbox-image");
+  const lightboxCounter = detailsRoot.querySelector(".pd3-lightbox-counter");
 
-  const openLightbox = (src) => {
-    if (!lightbox || !lightboxImage || !src) return;
-    lightboxImage.src = src;
+  let currentLightboxIndex = 0;
+
+  const updateLightboxImage = () => {
+    if (!lightboxImage) return;
+    lightboxImage.src = galleryImages[currentLightboxIndex];
+    if (lightboxCounter) lightboxCounter.textContent = `${currentLightboxIndex + 1} / ${galleryImages.length}`;
+  };
+
+  const openLightbox = (index = 0) => {
+    if (!lightbox || !lightboxImage) return;
+    currentLightboxIndex = index;
+    updateLightboxImage();
+    lightbox.style.display = "flex";
+    void lightbox.offsetWidth;
+    lightbox.style.opacity = "1";
     lightbox.classList.add("open");
     lightbox.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
@@ -354,32 +370,68 @@ const renderPropertyDetails = (property, propertyStatus = "Available", activeReg
 
   const closeLightbox = () => {
     if (!lightbox) return;
-    lightbox.classList.remove("open");
-    lightbox.setAttribute("aria-hidden", "true");
-    document.body.style.overflow = "";
+    lightbox.style.opacity = "0";
+    setTimeout(() => {
+      lightbox.style.display = "none";
+      lightbox.classList.remove("open");
+      lightbox.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+    }, 300);
+  };
+
+  const nextLightboxImage = () => {
+    currentLightboxIndex = (currentLightboxIndex + 1) % galleryImages.length;
+    updateLightboxImage();
+  };
+
+  const prevLightboxImage = () => {
+    currentLightboxIndex = (currentLightboxIndex - 1 + galleryImages.length) % galleryImages.length;
+    updateLightboxImage();
   };
 
   thumbButtons.forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", (e) => {
+      const index = parseInt(button.dataset.index || "0", 10);
+      const isGalleryClick = e.target.closest("[data-open-gallery]");
+      
+      if (isGalleryClick) {
+        openLightbox(index);
+        return;
+      }
+
       const next = button.dataset.image || "";
       if (!mainImage || !next) return;
       mainImage.src = next;
+      mainImage.dataset.index = index;
       thumbButtons.forEach((item) => item.classList.remove("active"));
       button.classList.add("active");
     });
   });
 
-  mainImageWrap?.addEventListener("click", () => openLightbox(mainImage?.src));
+  mainImageWrap?.addEventListener("click", () => {
+    const currentIndex = parseInt(mainImage.dataset.index || "0", 10);
+    openLightbox(currentIndex);
+  });
+
   detailsRoot.querySelector("[data-lightbox-close]")?.addEventListener("click", closeLightbox);
+  detailsRoot.querySelector(".pd3-lightbox-nav.next")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    nextLightboxImage();
+  });
+  detailsRoot.querySelector(".pd3-lightbox-nav.prev")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    prevLightboxImage();
+  });
 
   lightbox?.addEventListener("click", (event) => {
     if (event.target === lightbox) closeLightbox();
   });
 
   window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && lightbox?.classList.contains("open")) {
-      closeLightbox();
-    }
+    if (!lightbox?.classList.contains("open")) return;
+    if (event.key === "Escape") closeLightbox();
+    if (event.key === "ArrowRight") nextLightboxImage();
+    if (event.key === "ArrowLeft") prevLightboxImage();
   });
 
   detailsRoot.querySelectorAll("[data-request]").forEach((button) => {

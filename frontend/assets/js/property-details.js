@@ -251,13 +251,19 @@ const renderPropertyDetails = (property, propertyStatus = "Available") => {
 
   detailsRoot.querySelectorAll("[data-request]").forEach((button) => {
     button.addEventListener("click", async () => {
+      const originalText = button.textContent;
       try {
+        button.disabled = true;
+        button.textContent = "Requesting...";
         await apiRequest("/registrations", {
           method: "POST",
           body: JSON.stringify({ propertyId: button.dataset.request }),
         });
         showToast("Transfer request submitted successfully", "success");
+        button.textContent = "Request Submitted";
       } catch (error) {
+        button.disabled = false;
+        button.textContent = originalText;
         showToast(error.message, "error");
       }
     });

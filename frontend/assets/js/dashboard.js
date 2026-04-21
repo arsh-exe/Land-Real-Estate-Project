@@ -201,22 +201,34 @@ const renderWorkspace = (role, data) => {
 
   const isGov = role === "Admin" || role === "Government Officer";
 
+  const ICONS = {
+    dashboard: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`,
+    addProperty: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>`,
+    buy: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>`,
+    myProperties: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path></svg>`,
+    selling: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>`,
+    requests: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>`,
+    logout: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`,
+    verify: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`,
+    users: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`
+  };
+
   const navHtml = isGov
     ? `
-        <a class="active" href="/pages/dashboard.html"><span class="svd-nav-icon">■</span>Dashboard</a>
-        <a href="/pages/requests?verify=1"><span class="svd-nav-icon">▣</span>Verify Requests</a>
-        <a href="/pages/properties.html"><span class="svd-nav-icon">▤</span>All Properties</a>
-        <a href="/pages/admin-dashboard.html"><span class="svd-nav-icon">▦</span>Users</a>
-        <a href="#logout" data-action="logout"><span class="svd-nav-icon">●</span>Logout</a>
+        <a class="active" href="/pages/dashboard.html"><span class="svd-nav-icon">${ICONS.dashboard}</span>Dashboard</a>
+        <a href="/pages/requests?verify=1"><span class="svd-nav-icon">${ICONS.verify}</span>Verify Requests</a>
+        <a href="/pages/properties.html"><span class="svd-nav-icon">${ICONS.myProperties}</span>All Properties</a>
+        <a href="/pages/admin-dashboard.html"><span class="svd-nav-icon">${ICONS.users}</span>Users</a>
+        <a href="#logout" data-action="logout"><span class="svd-nav-icon">${ICONS.logout}</span>Logout</a>
       `
     : `
-        <a class="active" href="/pages/dashboard.html"><span class="svd-nav-icon">■</span>Dashboard</a>
-        <a href="/pages/properties?view=add"><span class="svd-nav-icon">▣</span>Add Property</a>
-        <a href="/pages/properties.html"><span class="svd-nav-icon">▤</span>Buy</a>
-        <a href="/pages/properties?view=mine"><span class="svd-nav-icon">▦</span>My Properties</a>
-        <a href="/pages/properties?view=selling"><span class="svd-nav-icon">▧</span>Currently Selling</a>
-        <a href="/pages/requests.html"><span class="svd-nav-icon">◍</span>Requests</a>
-        <a href="#logout" data-action="logout"><span class="svd-nav-icon">●</span>Logout</a>
+        <a class="active" href="/pages/dashboard.html"><span class="svd-nav-icon">${ICONS.dashboard}</span>Dashboard</a>
+        <a href="/pages/properties?view=add"><span class="svd-nav-icon">${ICONS.addProperty}</span>Add Property</a>
+        <a href="/pages/properties.html"><span class="svd-nav-icon">${ICONS.buy}</span>Buy</a>
+        <a href="/pages/properties?view=mine"><span class="svd-nav-icon">${ICONS.myProperties}</span>My Properties</a>
+        <a href="/pages/properties?view=selling"><span class="svd-nav-icon">${ICONS.selling}</span>Currently Selling</a>
+        <a href="/pages/requests.html"><span class="svd-nav-icon">${ICONS.requests}</span>Requests</a>
+        <a href="#logout" data-action="logout"><span class="svd-nav-icon">${ICONS.logout}</span>Logout</a>
       `;
 
   const ctaHtml = isGov
@@ -324,24 +336,23 @@ const renderWorkspace = (role, data) => {
                   return '<div style="padding: 2rem; text-align: center; color: #7a7f8a;">No properties in portfolio yet.</div>';
                 }
                 const width = 1000;
-                const height = 100;
+                const height = 150;
                 const maxPercent = Math.max(...split.map(s => s.percent), 10);
-                const getX = (i) => split.length === 1 ? width / 2 : 40 + (i / (split.length - 1)) * (width - 80);
-                const getY = (percent) => height - (percent / maxPercent) * height * 0.6 - 20;
+                const barWidth = Math.min(80, (width - 80) / split.length * 0.6);
                 
-                const points = split.map((s, i) => `${getX(i)},${getY(s.percent)}`).join(' ');
                 const elements = split.map((s, i) => {
-                  const x = getX(i);
-                  const y = getY(s.percent);
+                  const sectionWidth = (width - 80) / split.length;
+                  const x = 40 + i * sectionWidth + (sectionWidth - barWidth) / 2;
+                  const barHeight = Math.max((s.percent / maxPercent) * (height - 40), 5);
+                  const y = height - barHeight;
                   return `
-                    <circle cx="${x}" cy="${y}" r="6" fill="${s.color}" />
-                    <text x="${x}" y="${y - 12}" fill="var(--text)" font-size="14" font-weight="bold" text-anchor="middle">${Math.round(s.percent)}%</text>
+                    <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${s.color}" rx="6" />
+                    <text x="${x + barWidth / 2}" y="${y - 12}" fill="#12213f" font-size="14" font-weight="bold" text-anchor="middle">${Math.round(s.percent)}%</text>
                   `;
                 }).join('');
                 
                 return `
                   <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: 100%; overflow: visible; display: block;">
-                    <polyline points="${points}" fill="none" stroke="#001f54" stroke-width="3" />
                     ${elements}
                   </svg>
                 `;

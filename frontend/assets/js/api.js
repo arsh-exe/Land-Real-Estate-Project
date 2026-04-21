@@ -74,6 +74,11 @@ const apiRequest = async (path, options = {}) => {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      clearAuth();
+      window.location.href = "/pages/login.html";
+      throw new Error("Session expired. Please log in again.");
+    }
     const message = data.message || "Request failed";
     throw new Error(message);
   }

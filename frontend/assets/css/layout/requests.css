@@ -142,6 +142,9 @@ body.requests-page {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.7rem;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 .rw-priority-card {
@@ -274,6 +277,9 @@ body.requests-page {
 .rw-approval-list {
   display: grid;
   gap: 0.6rem;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 .rw-approval-item {
@@ -376,6 +382,9 @@ body.requests-page {
   display: grid;
   gap: 0.65rem;
   margin-top: 0.65rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 .rw-tx-item {
@@ -409,6 +418,9 @@ body.requests-page {
 .rw-timeline {
   display: grid;
   gap: 0.55rem;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 .rw-timeline-item {
@@ -458,4 +470,27 @@ body.requests-page {
   .rw-priority-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Custom scrollbars for workflow panels */
+.rw-priority-grid::-webkit-scrollbar,
+.rw-approval-list::-webkit-scrollbar,
+.rw-timeline::-webkit-scrollbar,
+.rw-tx-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rw-priority-grid::-webkit-scrollbar-track,
+.rw-approval-list::-webkit-scrollbar-track,
+.rw-timeline::-webkit-scrollbar-track,
+.rw-tx-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rw-priority-grid::-webkit-scrollbar-thumb,
+.rw-approval-list::-webkit-scrollbar-thumb,
+.rw-timeline::-webkit-scrollbar-thumb,
+.rw-tx-list::-webkit-scrollbar-thumb {
+  background-color: #c7d4e5;
+  border-radius: 10px;
 }

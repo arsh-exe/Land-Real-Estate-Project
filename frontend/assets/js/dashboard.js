@@ -185,8 +185,7 @@ const buildActivityFeed = (role, data) => {
     : (data.recentTransactions || []).map((item) => ({ ...item, _feedType: "transaction" }));
 
   return items
-    .sort((left, right) => new Date(right.createdAt || right.updatedAt || 0) - new Date(left.createdAt || left.updatedAt || 0))
-    .slice(0, 5);
+    .sort((left, right) => new Date(right.createdAt || right.updatedAt || 0) - new Date(left.createdAt || left.updatedAt || 0));
 };
 
 const renderWorkspace = (role, data) => {
@@ -284,7 +283,6 @@ const renderWorkspace = (role, data) => {
           <article class="svd-card svd-activity">
             <div class="svd-activity-head">
               <h3>Recent Activity</h3>
-              <a href="/pages/requests.html">View All -></a>
             </div>
 
             <div class="svd-activity-list">

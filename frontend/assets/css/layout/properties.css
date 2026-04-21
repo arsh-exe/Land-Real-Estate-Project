@@ -226,7 +226,7 @@ body.properties-buy-mode {
   padding: 0.75rem;
 }
 
-.properties-buy-mode #listing-block h3 {
+.properties-buy-mode #listing-block > h3 {
   display: none;
 }
 

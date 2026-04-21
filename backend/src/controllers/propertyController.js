@@ -175,31 +175,23 @@ const getPropertyById = async (req, res, next) => {
       return res.status(404).json({ message: "Property not found" });
     }
 
-    const approvedRegistration = await Registration.findOne({
+    const activeRegistrations = await Registration.find({
       property: property._id,
-      finalStatus: "Approved",
-    }).select("_id");
+      finalStatus: "Pending",
+    })
+    .populate("buyer", "fullName")
+    .populate("seller", "fullName")
+    .sort({ createdAt: -1 });
 
     let propertyStatus = "Available";
-    let activeRegistration = null;
 
-    if (approvedRegistration) {
+    if (!property.isOpenForSale) {
       propertyStatus = "Sold";
-    } else {
-      const pendingRegistration = await Registration.findOne({
-        property: property._id,
-        finalStatus: "Pending",
-      })
-      .populate("buyer", "fullName")
-      .populate("seller", "fullName");
-
-      if (pendingRegistration) {
-        propertyStatus = "Pending Request";
-        activeRegistration = pendingRegistration;
-      }
+    } else if (activeRegistrations.length > 0) {
+      propertyStatus = "Pending Request";
     }
 
-    return res.status(200).json({ property, propertyStatus, activeRegistration });
+    return res.status(200).json({ property, propertyStatus, activeRegistrations });
   } catch (error) {
     next(error);
   }

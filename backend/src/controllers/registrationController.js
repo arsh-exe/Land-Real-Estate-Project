@@ -90,6 +90,29 @@ const sellerDecision = async (req, res, next) => {
         { status: "Rejected", note: note || "Rejected by seller" },
         { new: true }
       );
+    } else if (status === "Approved") {
+      // Auto-reject any other competing pending requests for this property
+      await Registration.updateMany(
+        { property: registration.property._id, finalStatus: "Pending", _id: { $ne: registration._id } },
+        {
+          $set: {
+            finalStatus: "Rejected",
+            "sellerDecision.status": "Rejected",
+            "sellerDecision.note": "Auto-rejected: Seller approved another buyer's request",
+            "sellerDecision.date": new Date(),
+          },
+        }
+      );
+
+      await Transaction.updateMany(
+        { property: registration.property._id, status: "Pending", registration: { $ne: registration._id } },
+        {
+          $set: {
+            status: "Rejected",
+            note: "Auto-rejected: Seller approved another buyer's request",
+          },
+        }
+      );
     }
 
     await registration.save();

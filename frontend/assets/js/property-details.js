@@ -140,7 +140,7 @@ const renderRequestActions = (request, role, userId) => {
   return html;
 };
 
-const renderPropertyDetails = (property, propertyStatus = "Available", activeRegistration = null) => {
+const renderPropertyDetails = (property, propertyStatus = "Available", activeRegistrationsInput = null) => {
   const currentUser = getUser();
   const currentRole = roleKey(currentUser?.role);
   const currentUserId = currentUser?._id || currentUser?.id;
@@ -179,25 +179,38 @@ const renderPropertyDetails = (property, propertyStatus = "Available", activeReg
     { icon: "▲", value: property?.plotSize || "0.2", label: "Acres (Plot)" },
   ];
 
+  let activeRegistrations = Array.isArray(activeRegistrationsInput) ? activeRegistrationsInput : [];
+  if (activeRegistrationsInput && !Array.isArray(activeRegistrationsInput)) {
+    activeRegistrations = [activeRegistrationsInput];
+  }
+
   let transferAction = `<button class="btn btn-secondary" disabled>Request Official Transfer</button>`;
   let progressBlock = "";
 
-  if (activeRegistration) {
-    const isRelevantUser = 
-      ["admin", "government officer"].includes(currentRole) ||
-      String(activeRegistration.buyer?._id || activeRegistration.buyer) === String(currentUserId) ||
-      String(activeRegistration.seller?._id || activeRegistration.seller) === String(currentUserId);
-      
-    if (isRelevantUser) {
+  if (activeRegistrations.length > 0) {
+    let hasRelevantRegistration = false;
+    
+    activeRegistrations.forEach((reg) => {
+      const isRelevantUser = 
+        ["admin", "government officer"].includes(currentRole) ||
+        String(reg.buyer?._id || reg.buyer) === String(currentUserId) ||
+        String(reg.seller?._id || reg.seller) === String(currentUserId);
+        
+      if (isRelevantUser) {
+        hasRelevantRegistration = true;
+        progressBlock += `
+          <article style="border: 1px solid #e4e8ef; padding: 1.25rem; border-radius: 12px; margin-top: 1.5rem; background: #f7f8fb;">
+            <h4 style="margin: 0 0 0.5rem; font-size: 0.95rem; color: #12213f;">Active Transfer Request</h4>
+            <p style="margin: 0; font-size: 0.85rem; color: #69788e;">Buyer: ${reg.buyer?.fullName || "User"}</p>
+            ${renderRequestProgress(reg)}
+            ${renderRequestActions(reg, currentRole, currentUserId)}
+          </article>
+        `;
+      }
+    });
+
+    if (hasRelevantRegistration) {
       transferAction = "";
-      progressBlock = `
-        <article style="border: 1px solid #e4e8ef; padding: 1.25rem; border-radius: 12px; margin-top: 1.5rem; background: #f7f8fb;">
-          <h4 style="margin: 0 0 0.5rem; font-size: 0.95rem; color: #12213f;">Active Transfer Request</h4>
-          <p style="margin: 0; font-size: 0.85rem; color: #69788e;">Buyer: ${activeRegistration.buyer?.fullName || "User"}</p>
-          ${renderRequestProgress(activeRegistration)}
-          ${renderRequestActions(activeRegistration, currentRole, currentUserId)}
-        </article>
-      `;
     } else {
       if (propertyStatus === "Pending Request") {
         transferAction = `<button class="btn btn-secondary" disabled>Request Submitted</button>`;
@@ -208,8 +221,8 @@ const renderPropertyDetails = (property, propertyStatus = "Available", activeReg
       transferAction = `<button class="btn btn-outline" disabled>Owned by You</button>`;
     } else if (propertyStatus === "Pending Request") {
       transferAction = `<button class="btn btn-secondary" disabled>Request Submitted</button>`;
-    } else if (propertyStatus === "Sold") {
-      transferAction = `<button class="btn btn-secondary" disabled>Sold</button>`;
+    } else if (propertyStatus === "Sold" || propertyStatus === "Not For Sale") {
+      transferAction = `<button class="btn btn-secondary" disabled>${propertyStatus}</button>`;
     } else if (currentRole === "user" && isForSale) {
       transferAction = `<button class="btn btn-primary" data-request="${property._id}">Request Official Transfer</button>`;
     }
@@ -528,7 +541,7 @@ const loadPropertyDetails = async () => {
 
   try {
     const data = await apiRequest(`/properties/${id}`);
-    renderPropertyDetails(data.property, data.propertyStatus || "Available", data.activeRegistration);
+    renderPropertyDetails(data.property, data.propertyStatus || "Available", data.activeRegistrations || data.activeRegistration);
   } catch (error) {
     detailsRoot.innerHTML = `<p style="color:var(--danger);">${error.message}</p>`;
     showToast(error.message, "error");

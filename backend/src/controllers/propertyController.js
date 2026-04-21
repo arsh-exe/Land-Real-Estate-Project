@@ -69,14 +69,26 @@ const createProperty = async (req, res, next) => {
     }
 
     // Re-fetch and populate the property before returning
-    const populatedProperty = await Property.findById(property._id)
+    let populatedProperty = await Property.findById(property._id)
       .populate("owner", "fullName email role")
       .populate("documents");
+
+    if (!needsGovernmentApproval) {
+      try {
+        await generateAndAttachCertificate(property._id, req.user._id);
+        // Refresh the populated documents after certificate is generated
+        populatedProperty = await Property.findById(property._id)
+          .populate("owner", "fullName email role")
+          .populate("documents");
+      } catch (err) {
+        console.error("Failed to generate initial certificate during creation:", err);
+      }
+    }
 
     return res.status(201).json({
       message: needsGovernmentApproval
         ? "Property submitted for government approval"
-        : "Property created",
+        : "Property created and approved",
       property: populatedProperty,
     });
   } catch (error) {

@@ -1,19 +1,65 @@
-# Land & Real Estate Registration Web Application
+# 🏠 Land & Real Estate Registration Web Application
+
+<div align="center">
+
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green?style=flat&logo=node.js)](https://nodejs.org)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6.0+-green?style=flat&logo=mongodb)](https://www.mongodb.com)
+[![Express](https://img.shields.io/badge/Express-4.x-lightgrey?style=flat)](https://expressjs.com)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+</div>
 
 Production-ready full-stack MERN-style application using **MongoDB, Express, Node.js, and Vanilla HTML/CSS/JavaScript** (no React).
 
-## Features
+---
 
-- JWT auth with role-based access: Admin, Buyer, Seller, Government Officer
-- Secure backend with Helmet, Rate Limit, HPP, Mongo sanitization, and input validation
-- Dynamic role-aware responsive navbar on all pages
-- Property management with document uploads
-- Full registration workflow (Buyer -> Seller -> Officer)
-- Search and filters by location, type, price, and sorting
-- Role dashboards and transaction history
-- PDF certificate generation with QR verification URL.
+## 📋 Table of Contents
 
-## Project Structure
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [API Documentation](#api-documentation)
+- [Database Schema](#database-schema)
+- [Available Scripts](#available-scripts)
+- [Environment Variables](#environment-variables)
+- [Troubleshooting](#troubleshooting)
+- [Security Notes](#security-notes)
+- [License](#license)
+
+---
+
+## ✨ Features
+
+| Category | Description |
+|----------|-------------|
+| **Authentication** | JWT-based auth with secure token handling and refresh support |
+| **Role-Based Access** | Four roles: Admin, Buyer, Seller, Government Officer with granular permissions |
+| **Security** | Helmet, Rate Limit, HPP, Mongo sanitization, input validation, CORS protection |
+| **Property Management** | Full CRUD operations with document uploads (images, PDFs) |
+| **Registration Workflow** | Multi-step: Buyer → Seller → Government Officer approval |
+| **Search & Filters** | Filter by location, property type, price range with sorting options |
+| **Dashboards** | Role-specific dashboards with personalized views and statistics |
+| **Transactions** | Complete transaction history with status tracking |
+| **Certificates** | PDF generation with QR verification codes |
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | Vanilla HTML5, CSS3, JavaScript (ES6+) |
+| **Backend** | Node.js 18+, Express.js 4.x |
+| **Database** | MongoDB 6.0+ with Mongoose ODM |
+| **Authentication** | JWT (JSON Web Tokens) |
+| **File Storage** | Local filesystem (uploads/) |
+| **PDF Generation** | PDFKit with QR codes |
+
+---
+
+## 📁 Project Structure
 
 - `backend/` - API and business logic (MVC)
 - `frontend/` - Government portal UI (Vanilla HTML/CSS/JS)

@@ -1,6 +1,7 @@
 const Document = require("../models/Document");
 const Property = require("../models/Property");
 const Registration = require("../models/Registration");
+const { generateAndAttachCertificate } = require("../utils/certificateGenerator");
 const generateId = require("../utils/generateId");
 
 const createProperty = async (req, res, next) => {
@@ -448,6 +449,14 @@ const setPropertyApprovalStatus = async (req, res, next) => {
     }
 
     await property.save();
+
+    if (status === "Approved") {
+      try {
+        await generateAndAttachCertificate(property._id, req.user._id);
+      } catch (err) {
+        console.error("Failed to generate initial certificate:", err);
+      }
+    }
 
     const Notification = require("../models/Notification");
     await Notification.create({

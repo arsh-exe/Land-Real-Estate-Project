@@ -2,6 +2,7 @@ const Property = require("../models/Property");
 const Registration = require("../models/Registration");
 const Transaction = require("../models/Transaction");
 const Notification = require("../models/Notification");
+const { generateAndAttachCertificate } = require("../utils/certificateGenerator");
 const generateId = require("../utils/generateId");
 
 const createRequest = async (req, res, next) => {
@@ -206,6 +207,17 @@ const officerDecision = async (req, res, next) => {
           },
         }
       );
+
+      // Generate new certificate for the new owner
+      try {
+        const oldOwnerDetails = await require("../models/User").findById(oldOwner).select("fullName");
+        await generateAndAttachCertificate(property._id, req.user._id, {
+          previousOwnerName: oldOwnerDetails ? oldOwnerDetails.fullName : "Previous Owner",
+          amount: property.price
+        });
+      } catch (err) {
+        console.error("Failed to generate transfer certificate:", err);
+      }
     } else {
       await Transaction.findOneAndUpdate(
         { registration: registration._id },

@@ -40,10 +40,13 @@ app.use(
       if (!origin) return callback(null, true);
 
       const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/i.test(origin);
-      if (allowedOrigins.has(origin) || isLocalhost) {
+      const isVercel = /^https:\/\/land-real-estate-project.*\.vercel\.app$/i.test(origin);
+      
+      if (allowedOrigins.has(origin) || isLocalhost || isVercel) {
         return callback(null, true);
       }
 
+      console.error(`[CORS Blocked] Origin rejected: ${origin}`);
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,

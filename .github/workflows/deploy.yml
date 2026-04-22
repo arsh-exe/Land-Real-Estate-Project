@@ -23,6 +23,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Fix absolute paths for GitHub Pages
+        run: |
+          find ./frontend -type f -name "*.html" -exec sed -i 's|href="/|href="/Land-Real-Estate-Project/|g' {} +
+          find ./frontend -type f -name "*.html" -exec sed -i 's|src="/|src="/Land-Real-Estate-Project/|g' {} +
+          find ./frontend -type f -name "*.html" -exec sed -i 's|action="/|action="/Land-Real-Estate-Project/|g' {} +
+          find ./frontend -type f -name "*.js" -exec sed -i 's|href: "/|href: "/Land-Real-Estate-Project/|g' {} +
+          find ./frontend -type f -name "*.js" -exec sed -i 's|href="/|href="/Land-Real-Estate-Project/|g' {} +
+          find ./frontend -type f -name "*.js" -exec sed -i 's|src="/|src="/Land-Real-Estate-Project/|g' {} +
+          find ./frontend -type f -name "*.js" -exec sed -i 's|window.location.href = "/|window.location.href = "/Land-Real-Estate-Project/|g' {} +
+          find ./frontend -type f -name "*.js" -exec sed -i 's|window.location.href="/|window.location.href="/Land-Real-Estate-Project/|g' {} +
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact

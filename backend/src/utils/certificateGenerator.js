@@ -74,8 +74,8 @@ const generateAndAttachCertificate = async (propertyId, officerId, transactionDa
     doc.save();
     doc.fontSize(70)
        .fillOpacity(0.15)
-       .fillColor('green')
-       .text('APPROVED', 130, 300, {
+       .fillColor(transactionData ? 'blue' : 'green')
+       .text(transactionData ? 'TRANSFERRED' : 'APPROVED', 130, 300, {
            angle: 45
        });
     doc.restore();
@@ -87,14 +87,15 @@ const generateAndAttachCertificate = async (propertyId, officerId, transactionDa
     doc.text(`Certificate ID: ${certId}`);
     doc.text(`Property: ${property.title}`);
     doc.text(`Location: ${property.location}`);
-    doc.text(`Area: ${property.area} sq units`);
-    doc.text(`Valuation: $${property.price}`);
+    doc.text(`Area: ${Number(property.area).toLocaleString()} sq units`);
+    doc.text(`Valuation: $${Number(property.price).toLocaleString()}`);
     doc.text(`Owner: ${property.owner.fullName}`);
     
     if (transactionData) {
       doc.moveDown();
+      doc.text(`Status: Officially Transferred`);
       doc.text(`Previous Owner: ${transactionData.previousOwnerName}`);
-      doc.text(`Transfer Amount: $${transactionData.amount}`);
+      doc.text(`Transfer Amount: $${Number(transactionData.amount).toLocaleString()}`);
     } else {
       doc.moveDown();
       doc.text(`Status: Initially Approved by Government`);

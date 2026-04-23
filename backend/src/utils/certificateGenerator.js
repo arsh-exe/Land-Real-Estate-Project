@@ -2,10 +2,18 @@ const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 const QRCode = require("qrcode");
+const cloudinary = require("cloudinary").v2;
 const Document = require("../models/Document");
 const Property = require("../models/Property");
 const User = require("../models/User");
 const generateId = require("./generateId");
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const generateAndAttachCertificate = async (propertyId, officerId, transactionData = null) => {
   try {
@@ -16,14 +24,23 @@ const generateAndAttachCertificate = async (propertyId, officerId, transactionDa
     const oldCerts = await Document.find({ property: property._id, kind: "CERTIFICATE" });
     for (const cert of oldCerts) {
       try {
-        const absolutePath = path.join(__dirname, "..", "..", cert.filePath.startsWith("/") ? cert.filePath.slice(1) : cert.filePath);
-        // Fallback if filePath doesn't resolve correctly:
-        const altPath = path.join(__dirname, "..", "uploads", path.basename(cert.filePath));
-        
-        if (fs.existsSync(absolutePath)) {
-          fs.unlinkSync(absolutePath);
-        } else if (fs.existsSync(altPath)) {
-          fs.unlinkSync(altPath);
+        if (cert.filePath && cert.filePath.includes("cloudinary.com")) {
+          // Extract public_id roughly (assuming folder/filename structure)
+          const parts = cert.filePath.split("/");
+          const filename = parts.pop();
+          const folder = parts.pop();
+          const publicId = `${folder}/${filename.split(".")[0]}`;
+          await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+        } else if (cert.filePath) {
+          const absolutePath = path.join(__dirname, "..", "..", cert.filePath.startsWith("/") ? cert.filePath.slice(1) : cert.filePath);
+          // Fallback if filePath doesn't resolve correctly:
+          const altPath = path.join(__dirname, "..", "uploads", path.basename(cert.filePath));
+          
+          if (fs.existsSync(absolutePath)) {
+            fs.unlinkSync(absolutePath);
+          } else if (fs.existsSync(altPath)) {
+            fs.unlinkSync(altPath);
+          }
         }
       } catch (err) {
         console.error("Error deleting old certificate file:", err);
@@ -97,13 +114,32 @@ const generateAndAttachCertificate = async (propertyId, officerId, transactionDa
       writeStream.on("error", reject);
     });
 
+    // Upload to Cloudinary
+    let cloudinaryUrl;
+    try {
+      const result = await cloudinary.uploader.upload(absolutePath, {
+        folder: "land_registry_certificates",
+        resource_type: "image", // Store PDF as image resource type in Cloudinary
+        public_id: `${certId}-${Date.now()}`
+      });
+      cloudinaryUrl = result.secure_url;
+      
+      // Clean up local file
+      if (fs.existsSync(absolutePath)) {
+        fs.unlinkSync(absolutePath);
+      }
+    } catch (uploadError) {
+      console.error("Cloudinary upload error:", uploadError);
+      throw new Error("Failed to upload certificate to cloud storage.");
+    }
+
     // 3. Save new Document record
     const savedDocument = await Document.create({
       documentId: certId,
       originalName: "Official_Certificate.pdf",
-      filePath: `/uploads/${fileName}`,
+      filePath: cloudinaryUrl,
       mimeType: "application/pdf",
-      size: fs.statSync(absolutePath).size,
+      size: 0, // Size is stored in Cloudinary, so 0 or result.bytes
       uploadedBy: officerId,
       property: property._id,
       kind: "CERTIFICATE",
